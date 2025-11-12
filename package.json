@@ -1,0 +1,27 @@
+{
+  "name": "toolshop-automation-playwright",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:chromium": "npx playwright test --project=chromium",
+    "test:firefox": "npx playwright test --project=firefox",
+    "test:webkit": "npx playwright test --project=webkit",
+    "test:msedge": "npx playwright test --project=msedge",
+    "test:all": "npx playwright test --project=chromium --project=firefox --project=msedge",
+    "test:all-headed": "npx playwright test --project=chromium --project=firefox --project=msedge --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:ui": "npx playwright test --ui",
+    "report": "npx playwright show-report",
+    "codegen": "npx playwright codegen"
+  },
+  "keywords": ["playwright", "automation", "testing", "e2e"],
+  "author": "José Emmanuel Grajales Lagunes",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.0"
+  }
+}
