@@ -1,6 +1,6 @@
-import { ProductsPage } from "../src/po/Pages/ProductsPage";
-import { ProductDetailPage } from "../src/po/Pages/ProductDetailPage";
-import { CartPage } from "../src/po/Pages/CartPage";
+import { ProductsPage } from "../src/po/Pages/ProductsPage.js";
+import { ProductDetailPage } from "../src/po/Pages/ProductDetailPage.js";
+import { CartPage } from "../src/po/Pages/CartPage.js";
 
 // ====================================================================
 // TEST SETUP UTILITIES

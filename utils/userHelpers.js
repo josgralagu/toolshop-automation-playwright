@@ -1,6 +1,6 @@
-import { SignUpPage } from "../src/po/Pages/SignUpPage";
-import { SignInPage } from "../src/po/Pages/SignInPage";
-import { MyAccountPage } from "../src/po/Pages/MyAccountPage";
+import { SignUpPage } from "../src/po/Pages/SignUpPage.js";
+import { SignInPage } from "../src/po/Pages/SignInPage.js";
+import { MyAccountPage } from "../src/po/Pages/MyAccountPage.js";
 
 // ====================================================================
 // USER MANAGEMENT HELPER FUNCTIONS
