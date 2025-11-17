@@ -1,4 +1,4 @@
-import { URLS } from "../../../utils/constants";
+import { URLS } from "../../../utils/constants.js";
 
 export class ProductsPage {
   constructor(page) {

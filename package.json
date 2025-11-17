@@ -1,6 +1,7 @@
 {
   "name": "toolshop-automation-playwright",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "npx playwright test",
@@ -14,14 +15,30 @@
     "test:debug": "npx playwright test --debug",
     "test:ui": "npx playwright test --ui",
     "report": "npx playwright show-report",
-    "codegen": "npx playwright codegen"
+    "codegen": "npx playwright codegen",
+    "testmocha": "mocha tests-mocha-migration/**/*.spec.js",
+    "testmocha:single": "mocha",
+    "testmocha:parallel": "mocha --parallel --jobs 2 tests-mocha-migration/**/*.spec.js",
+    "testmocha:sequential": "mocha --no-parallel tests-mocha-migration/**/*.spec.js",
+    "testmocha:watch": "mocha --watch tests-mocha-migration/**/*.spec.js"
   },
-  "keywords": ["playwright", "automation", "testing", "e2e"],
+  "keywords": [
+    "playwright",
+    "automation",
+    "testing",
+    "e2e"
+  ],
   "author": "José Emmanuel Grajales Lagunes",
   "license": "ISC",
   "description": "",
   "devDependencies": {
     "@playwright/test": "^1.56.1",
-    "@types/node": "^24.10.0"
+    "@types/node": "^24.10.0",
+    "chai": "^6.2.1",
+    "mocha": "^11.7.5",
+    "playwright": "^1.56.1"
+  },
+  "dependencies": {
+    "should": "^13.2.3"
   }
 }

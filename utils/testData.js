@@ -1,4 +1,4 @@
-import { generateUniqueEmail } from "./helpers";
+import { generateUniqueEmail } from "./helpers.js";
 
 // ====================================================================
 // TEST DATA CONFIGURATION
