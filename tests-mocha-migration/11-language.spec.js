@@ -19,8 +19,6 @@ BROWSERS.forEach(browserName => {
   const LANGUAGES = ['DE', 'EN', 'ES', 'FR', 'NL', 'TR'];
 
   describe(`Feature: Language Change on Contact Page [${browserName}]`, function () {
-    // Increase timeout for async operations
-    this.timeout(60000);
 
     let browserContext;
 

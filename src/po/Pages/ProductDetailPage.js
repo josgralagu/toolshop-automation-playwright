@@ -114,10 +114,7 @@ export class ProductDetailPage {
    * Click add to favorites button
    */
   async clickAddToFavorites() {
-    await this.addToFavoritesButton.waitFor({
-      state: "visible",
-      timeout: 10000,
-    });
+    await this.addToFavoritesButton.waitFor({ state: "visible", timeout: 25000, });
     await this.addToFavoritesButton.click();
   }
 

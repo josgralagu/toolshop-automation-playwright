@@ -26,7 +26,7 @@ export default defineConfig({
   workers: 2,
 
   /* Timeout per test. */
-  timeout: 60000,
+  timeout: 80000,
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [

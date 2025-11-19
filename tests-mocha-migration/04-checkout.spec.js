@@ -13,8 +13,6 @@ const BROWSERS = ['chromium', 'firefox', 'webkit'];
 
 BROWSERS.forEach(browserName => {
   describe(`Checkout – Subtotal Calculation [${browserName}]`, function () {
-    // Increase timeout for async operations
-    this.timeout(60000);
 
     let browserContext;
     let detailPage, cartPage;

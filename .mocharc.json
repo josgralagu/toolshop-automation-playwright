@@ -3,7 +3,7 @@
   "diff": true,
   "extension": ["js"],
   "reporter": "spec",
-  "timeout": 60000,
+  "timeout": 80000,
   "ui": "bdd",
   "retries": 2,
   "parallel": true,

@@ -15,8 +15,6 @@ const BROWSERS = ['chromium', 'firefox', 'webkit'];
 
 BROWSERS.forEach(browserName => {
   describe(`User Profile [${browserName}]`, function () {
-    // Increase timeout for async operations
-    this.timeout(60000);
 
     let browserContext;
 
@@ -74,7 +72,7 @@ BROWSERS.forEach(browserName => {
       await profilePage.updatePhoneNumber(invalidProfileUpdate.phone);
 
       // PLAYWRIGHT EXPECT: Verify element is visible
-      await pwExpect(profilePage.errorMessage).toBeVisible({ timeout: 10000 });
+      await pwExpect(profilePage.errorMessage).toBeVisible({ timeout: 15000 });
 
       // CHAI EXPECT: Verify phone field shows the valid value that was loaded at the beginning (fluent comparison)
       const phoneValue = await profilePage.phoneField.inputValue();

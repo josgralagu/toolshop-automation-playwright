@@ -14,12 +14,6 @@ import { generateValidUser } from '../utils/testData.js';
 // ====================================================================
 
 /**
- * Increase test timeout to 60 seconds
- * Playwright operations can take time for page loads, waits, etc.
- */
-const timeout = 60000;
-
-/**
  * Make expect available globally for all tests
  */
 global.expect = expect;
@@ -104,4 +98,4 @@ export async function getAuthenticatedPage(page) {
   return { page, user };
 }
 
-export { timeout, pwExpect };
+export { pwExpect };

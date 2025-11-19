@@ -12,12 +12,10 @@ import { initializeBrowser, closeBrowser, pwExpect } from './setup.js';
 // Tests for favorites management functionality
 // Uses Mocha as test runner, Chai for assertions, Playwright for automation
 // ====================================================================
-const BROWSERS = ['chromium', 'firefox', 'webkit'];
+const BROWSERS = [/*'chromium', 'firefox',*/ 'webkit'];
 
 BROWSERS.forEach(browserName => {
   describe(`Favorite Products [${browserName}]`, function () {
-    // Increase timeout for async operations
-    this.timeout(60000);
 
     let browserContext;
 

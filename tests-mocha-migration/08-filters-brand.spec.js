@@ -12,8 +12,6 @@ const BROWSERS = ['chromium', 'firefox', 'webkit'];
 
 BROWSERS.forEach(browserName => {
   describe(`Area: Filter - Filter products by brand showing only items in stock [${browserName}]`, function () {
-    // Increase timeout for async operations
-    this.timeout(60000);
 
     let browserContext;
 

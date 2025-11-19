@@ -43,6 +43,7 @@ export class SignInPage {
    * Click login button to submit form
    */
   async clickLogInButton() {
+    await this.logInButton.waitFor({ state: "visible", timeout: 15000 });
     await this.logInButton.click();
   }
 

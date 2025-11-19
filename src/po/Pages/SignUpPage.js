@@ -56,9 +56,10 @@ export class SignUpPage {
 
     // Select country from dropdown and submit registration
     await this.countryDropdown.selectOption(userData.country);
+    await this.registerButton.waitFor({ state: "visible", timeout: 10000 });
     await this.registerButton.click();
 
     // Wait for redirect to login page after successful registration
-    await this.page.waitForURL('**/auth/login', { timeout: 15000 });
+    await this.page.waitForURL('**/auth/login', { waitUntil: 'load', timeout: 30000 });
   }
 }

@@ -12,8 +12,6 @@ const BROWSERS = ['chromium', 'firefox', 'webkit'];
 
 BROWSERS.forEach(browserName => {
   describe(`Filter Products by Subcategory [${browserName}]`, function () {
-    // Increase timeout for async operations
-    this.timeout(60000);
 
     let browserContext;
 

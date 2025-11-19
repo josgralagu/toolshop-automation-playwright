@@ -11,8 +11,6 @@ const BROWSERS = ['chromium', 'firefox', 'webkit'];
 
 BROWSERS.forEach(browserName => {
   describe(`Filter - Sustainability Type [${browserName}]`, function () {
-    // Increase timeout for async operations
-    this.timeout(60000);
 
     let browserContext;
 
