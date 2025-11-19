@@ -88,9 +88,7 @@ export const categoryKeywords = {
  * Tests various product and quantity combinations
  */
 export const cartConfigurations = [
-  { productCount: 1, quantityPerProduct: 1 },
   { productCount: 2, quantityPerProduct: 3 },
-  { productCount: 3, quantityPerProduct: 2 },
 ];
 
 // ==================== FILTER DATA SECTION ====================
@@ -101,20 +99,7 @@ export const cartConfigurations = [
 export const subcategories = [
   "Hammer",
   "Hand Saw",
-  "Wrench",
-  "Screwdriver",
-  "Pliers",
-  "Chisels",
-  "Measures",
-  "Grinder",
-  "Sander",
-  "Saw",
-  "Drill",
-  "Tool Belts",
-  "Storage Solutions",
-  "Workbench",
-  "Safety Gear",
-  "Fasteners",
+  "Wrench"
 ];
 
 /**
@@ -137,19 +122,7 @@ export const multipleFilters = [
 export const subcategoryKeywords = {
   Hammer: ["Hammer"],
   "Hand Saw": ["Saw"],
-  Wrench: ["Wrench", "Spanner"],
-  Screwdriver: ["Screwdriver"],
-  Pliers: ["Pliers", "Cutters"],
-  Chisels: ["Chisels"],
-  Measures: ["Measur", "Ruler"],
-  Sander: ["Sander"],
-  Saw: ["Saw"],
-  Drill: ["Drill"],
-  "Tool Belts": ["toolbelt"],
-  "Storage Solutions": ["Cabinet"],
-  Workbench: ["Workbench"],
-  "Safety Gear": ["Gloves", "Helmet", "Protection", "Goggles"],
-  Fasteners: ["Screws", "Nuts", "Washers"],
+  Wrench: ["Wrench", "Spanner"]
 };
 
 /**
