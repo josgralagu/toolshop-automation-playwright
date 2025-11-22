@@ -1,8 +1,6 @@
 import { expect, assert, should } from 'chai';
 import { expect as pwExpect, chromium, firefox, webkit } from "@playwright/test";
-import { SignUpPage } from '../../po/Pages/SignUpPage.js';
-import { SignInPage } from '../../po/Pages/SignInPage.js';
-import { MyAccountPage } from '../../po/Pages/MyAccountPage.js';
+import { pages } from '../../po/index.js';
 import { generateValidUser } from '../utils/testData.js';
 
 // ====================================================================
@@ -82,9 +80,9 @@ export async function closeBrowser({ browser, context }) {
  * @returns {Promise<Object>} Object containing { page, user }
  */
 export async function getAuthenticatedPage(page) {
-  const signUpPage = new SignUpPage(page);
-  const signInPage = new SignInPage(page);
-  const myAccountPage = new MyAccountPage(page);
+  const signUpPage = pages('signup', page);
+  const signInPage = pages('signin', page);
+  const myAccountPage = pages('myaccount', page);
   
   const user = generateValidUser();
   console.log(`🆕 Creating test user: ${user.email}`);
