@@ -2,16 +2,6 @@ export class ContactPage {
   constructor(page) {
     this.page = page;
 
-    // ==================== LANGUAGE SELECTOR ELEMENTS ====================
-    this.languageDropdownButton = page.locator('[data-test="language-select"]');
-    this.languageOption = (code) => page.locator(`[data-test="lang-${code}"]`);
-
-    // ==================== NAVIGATION ELEMENTS ====================
-    this.homeLink = page.locator('[data-test="nav-home"]');
-    this.categoriesLink = page.locator('[data-test="nav-categories"]');
-    this.contactLink = page.locator('[data-test="nav-contact"]');
-    this.signInLink = page.locator('[data-test="nav-sign-in"]');
-
     // ==================== MAIN CONTENT ELEMENTS ====================
     this.mainHeading = page.locator("h3");
 
@@ -47,34 +37,6 @@ export class ContactPage {
     await this.page.goto("https://practicesoftwaretesting.com/contact");
     await this.page.waitForLoadState("domcontentloaded");
     await this.firstNameInput.waitFor({ state: "visible", timeout: 15000 });
-  }
-
-  // ==================== LANGUAGE METHODS ====================
-
-  /**
-   * Change page language to specified language code
-   * @param {string} languageCode - Language code (DE, EN, ES, FR, NL, TR)
-   */
-  async changeLanguage(languageCode) {
-    await this.languageDropdownButton.waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
-    await this.languageDropdownButton.click();
-    await this.page.waitForTimeout(1500);
-
-    const selector = `[data-test="lang-${languageCode.toLowerCase()}"]`;
-    await this.page.locator(selector).waitFor({ state: "visible", timeout: 15000 });
-    await this.page.locator(selector).click();
-    await this.page.waitForTimeout(1500);
-  }
-
-    /**
-   * Get currently selected language from dropdown
-   * @returns {string} Current language text
-   */
-  async getCurrentLanguage() {
-    return await this.languageDropdownButton.textContent();
   }
 
   // ==================== UTILITY METHODS ====================

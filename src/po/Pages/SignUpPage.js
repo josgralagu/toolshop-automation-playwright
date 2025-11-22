@@ -1,4 +1,4 @@
-import { URLS } from '../../../utils/constants.js';
+import { URLS } from "../../configs/utils/constants.js";
 
 export class SignUpPage {
   constructor(page) {
