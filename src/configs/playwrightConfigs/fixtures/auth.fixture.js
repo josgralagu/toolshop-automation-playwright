@@ -1,7 +1,5 @@
 import { test as base } from '@playwright/test';
-import { SignUpPage } from '../../../po/Pages/SignUpPage';
-import { SignInPage } from '../../../po/Pages/SignInPage';
-import { MyAccountPage } from '../../../po/Pages/MyAccountPage';
+import { pages } from '../../../po/index.js';
 import { generateValidUser } from '../../utils/testData';
 
 // ====================================================================
@@ -24,9 +22,9 @@ import { generateValidUser } from '../../utils/testData';
  */
 export const test = base.extend({
   authenticatedPage: async ({ page }, use) => {
-    const signUpPage = new SignUpPage(page);
-    const signInPage = new SignInPage(page);
-    const myAccountPage = new MyAccountPage(page);
+    const signUpPage = pages('signup', page);
+    const signInPage = pages('signin', page);
+    const myAccountPage = pages('myaccount', page);
     
     // Generate unique test user data  
     const user = generateValidUser();
@@ -55,9 +53,9 @@ export const test = base.extend({
    * })
    */
   authenticatedUser: async ({ page }, use) => {
-    const signUpPage = new SignUpPage(page);
-    const signInPage = new SignInPage(page);
-    const myAccountPage = new MyAccountPage(page);
+    const signUpPage = pages('signup', page);
+    const signInPage = pages('signin', page);
+    const myAccountPage = pages('myaccount', page);
     
     // Generate and register unique user account
     const user = generateValidUser();
