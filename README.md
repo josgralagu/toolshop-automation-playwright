@@ -29,14 +29,14 @@ The framework supports both **Playwright native tests** and **Mocha-based test m
 | **Language** | JavaScript (ES Modules) |
 | **Architecture** | Page Object Model (POM) |
 | **Reporters** | HTML, List, JSON, Spec |
-| **Browsers** | Chromium, Firefox, Microsoft Edge, WebKit |
+| **Browsers** | Chromium, Firefox, Microsoft Edge |
 
 ## ✅ Prerequisites
 
 Before you begin, ensure you have the following installed:
 
 - **Node.js** (version 16 or higher)
-- **npm** or **yarn** package manager
+- **npm** package manager
 - **Git**
 
 ## 🚀 Installation
@@ -65,53 +65,63 @@ npx playwright install
 ```
 toolshop-automation-playwright/
 ├── src/
-│   ├── fixtures/
-│   │   └── auth.fixture.js          # Authentication setup for Playwright tests
-│   ├── po/
-│   │   ├── Pages/                    # Page Object Models
+│   ├── configs/
+│   │   ├── mochaConfigs/
+│   │   │   ├── .mocharc.json              # Mocha configuration
+│   │   │   └── setup.js                   # Mocha global setup with Chai assertions
+│   │   ├── playwrightConfigs/
+│   │   │   ├── fixtures/
+│   │   │   │   └── auth.fixture.js        # Authentication fixtures for Playwright
+│   │   │   └── playwright.config.js       # Playwright configuration
+│   │   └── utils/
+│   │       ├── commands.js                # 40+ reusable command functions
+│   │       ├── helpers.js                 # Helper utilities
+│   │       └── testData.js                # Centralized test data
+│   ├── po/                                # Page Object Model
+│   │   ├── Components/                    # Reusable UI components
+│   │   │   ├── FilterComponent.js
+│   │   │   ├── index.js
+│   │   │   ├── NavigationBarComponent.js
+│   │   │   ├── PaginationComponent.js
+│   │   │   └── SearchComponent.js
+│   │   ├── Pages/                         # Page objects
+│   │   │   ├── BasePage.js
 │   │   │   ├── CartPage.js
 │   │   │   ├── ContactPage.js
 │   │   │   ├── FavoritesPage.js
+│   │   │   ├── index.js
 │   │   │   ├── MyAccountPage.js
 │   │   │   ├── ProductDetailPage.js
 │   │   │   ├── ProductsPage.js
 │   │   │   ├── ProfilePage.js
 │   │   │   ├── SignInPage.js
 │   │   │   └── SignUpPage.js
-│   │   └── Tests/                    # Playwright test specifications
-│   │       ├── 02-user-profile.spec.js
-│   │       ├── 03-product-details.spec.js
-│   │       ├── 04-checkout.spec.js
-│   │       ├── 05-favorites.spec.js
-│   │       ├── 06-filters-category.spec.js
-│   │       ├── 07-filters-subcategory.spec.js
-│   │       ├── 08-filters-brand.spec.js
-│   │       ├── 09-filters-sustainability.spec.js
-│   │       ├── 10-filters-multiple.spec.js
-│   │       └── 11-language.spec.js
-├── tests-mocha-migration/            # Mocha-based test files
-│   ├── 02-user-profile.spec.js       # User profile management tests
-│   ├── 03-product-details.spec.js    # Product detail page tests
-│   ├── 04-checkout.spec.js           # Shopping cart and checkout tests
-│   ├── 05-favorites.spec.js          # Favorites functionality tests
-│   ├── 06-filters-category.spec.js   # Category filter tests
-│   ├── 07-filters-subcategory.spec.js # Subcategory filter tests
-│   ├── 08-filters-brand.spec.js      # Brand filter tests
-│   ├── 09-filters-sustainability.spec.js # Sustainability filter tests
-│   ├── 10-filters-multiple.spec.js   # Multiple filter combination tests
-│   ├── 11-language.spec.js           # Multi-language support tests
-│   └── setup.js                      # Mocha global setup and utilities
-├── utils/                            # Utility functions and helpers
-│   ├── commands.js                   # Common command operations
-│   ├── constants.js                  # URL and constant definitions
-│   ├── helpers.js                    # Helper functions
-│   ├── testData.js                   # Test data configurations
-│   ├── testSetup.js                  # Test setup utilities
-│   └── userHelpers.js                # User-related helper functions
-├── .mocharc.json                     # Mocha configuration file
-├── playwright.config.js              # Playwright configuration
-├── package.json                      # Project dependencies and scripts
-└── README.md                         # This file
+│   │   └── index.js                       # Centralized exports
+│   └── tests/
+│       ├── mocha-chai-tests/              # Mocha-Chai test specifications
+│       │   ├── 02-user-profile.spec.js
+│       │   ├── 03-product-details.spec.js
+│       │   ├── 04-checkout.spec.js
+│       │   ├── 05-favorites.spec.js
+│       │   ├── 06-filters-category.spec.js
+│       │   ├── 07-filters-subcategory.spec.js
+│       │   ├── 08-filters-brand.spec.js
+│       │   ├── 09-filters-sustainability.spec.js
+│       │   ├── 10-filters-multiple.spec.js
+│       │   └── 11-language.spec.js
+│       └── playwright-tests/              # Playwright test specifications
+│           ├── 02-user-profile.spec.js
+│           ├── 03-product-details.spec.js
+│           ├── 04-checkout.spec.js
+│           ├── 05-favorites.spec.js
+│           ├── 06-filters-category.spec.js
+│           ├── 07-filters-subcategory.spec.js
+│           ├── 08-filters-brand.spec.js
+│           ├── 09-filters-sustainability.spec.js
+│           ├── 10-filters-multiple.spec.js
+│           └── 11-language.spec.js
+├── package.json                           # Project dependencies and scripts
+└── README.md                             # This file
 ```
 
 ## 🎯 Test Execution
@@ -120,34 +130,39 @@ toolshop-automation-playwright/
 
 | Command | Description |
 |---------|-------------|
-| `npm test` | Run all Playwright tests |
-| `npm run test:headed` | Run tests in headed mode (visible browser) |
-| `npm run test:chromium` | Run tests on Chrome/Chromium |
-| `npm run test:firefox` | Run tests on Firefox |
-| `npm run test:msedge` | Run tests on Microsoft Edge |
-| `npm run test:webkit` | Run tests on Safari (WebKit) |
-| `npm run test:all` | Run tests on all browsers (headless) |
-| `npm run test:all-headed` | Run tests on all browsers (headed) |
-| `npm run test:ui` | Run tests with Playwright UI mode |
-| `npm run test:debug` | Run tests in debug mode |
-| `npm run codegen` | Generate test code with Playwright Codegen |
+| `npm run test:playwright` | Run all Playwright tests |
+| `npm run test:playwright:headed` | Run tests in headed mode (visible browser) |
+| `npm run test:playwright:chrome` | Run tests on Chrome/Chromium |
+| `npm run test:playwright:firefox` | Run tests on Firefox |
+| `npm run test:playwright:msedge` | Run tests on Microsoft Edge |
+| `npm run test:playwright:ui` | Run tests with Playwright UI mode |
+| `npm run test:playwright:debug` | Run tests in debug mode |
+| `npm run test:playwright:report` | Show Playwright HTML report |
 
 ### Mocha Tests
 
 | Command | Description |
 |---------|-------------|
-| `npm run testmocha` | Run all Mocha tests |
-| `npm run testmocha:single` | Run single Mocha test |
-| `npm run testmocha:parallel` | Run Mocha tests in parallel (2 jobs) |
-| `npm run testmocha:sequential` | Run Mocha tests sequentially |
-| `npm run testmocha:watch` | Run Mocha tests in watch mode |
+| `npm run test:mocha` | Run all Mocha tests |
+| `npm run test:mocha:file` | Run single Mocha test file |
+| `npm run test:mocha:watch` | Run Mocha tests in watch mode |
+| `npm run test:mocha:serial` | Run Mocha tests sequentially |
+| `npm run test:mocha:reporter` | Run with detailed spec reporter |
+
+### Combined Test Execution
+
+| Command | Description |
+|---------|-------------|
+| `npm run test:all` | Run both Playwright and Mocha tests sequentially |
+| `npm run test:all:headed` | Run tests in headed mode |
+| `npm run test:all:parallel` | Run both test frameworks in parallel |
 
 ## 🧩 Test Coverage
 
 ### User Management
 - ✅ Successful profile updates
 - ✅ Unsuccessful profile update validations
-- ✅ Authentication flows
+- ✅ Authentication flows with automatic user generation
 
 ### Product Features
 - ✅ View product details for multiple products
@@ -158,95 +173,108 @@ toolshop-automation-playwright/
 - ✅ Add/remove products from favorites
 - ✅ Authentication validation
 - ✅ Complete checkout process
-- ✅ Cart operations
+- ✅ Cart operations with line total validation
 
 ### Filtering System
-- ✅ Category filtering
-- ✅ Subcategory filtering
+- ✅ Category filtering (Hand Tools, Power Tools, Other)
+- ✅ Subcategory filtering with keyword validation
 - ✅ Brand filtering
-- ✅ Sustainability filtering
-- ✅ Multiple combined filters
+- ✅ Sustainability (ECO) filtering
+- ✅ Multiple combined filters with pagination support
 
 ### Internationalization
 - ✅ Multi-language support (DE, EN, ES, FR, NL, TR)
-- ✅ Translation verification
+- ✅ Contact form translation verification
+- ✅ Navigation element translation validation
 
 ## ⚙️ Configuration Details
 
-### Playwright Configuration (`playwright.config.js`)
+### Playwright Configuration
 
-```javascript
-{
-  baseURL: 'https://practicesoftwaretesting.com',
-  testDir: './src/po/Tests',
-  timeout: 60000,
-  retries: 2,
-  workers: 2,
-  fullyParallel: true,
-  viewport: { width: 1920, height: 1080 }
-}
-```
-
-**Test Execution Settings:**
-- **Parallel Execution**: 2 workers
-- **Retry Mechanism**: 2 retries for failed tests
-- **Headless Mode**: Enabled for all browsers
-- **Timeout**: 60 seconds per test
-- **Screenshots**: Only on failure
-- **Videos**: Retained on failure
-- **Trace**: On first retry
-
-**Browser Configuration:**
-- **Chromium** (Desktop Chrome)
-- **Firefox** (Desktop Firefox)
-- **Microsoft Edge** (Desktop Edge)
+**Key Settings:**
+- **Base URL**: `https://practicesoftwaretesting.com`
+- **Test Directory**: `src/tests/playwright-tests`
+- **Timeout**: 80 seconds per test
+- **Retries**: 2 attempts for failed tests
+- **Workers**: 2 parallel executions
 - **Viewport**: 1920x1080
 
-### Mocha Configuration (`.mocharc.json`)
+**Browser Support:**
+- Chromium (Desktop Chrome)
+- Firefox (Desktop Firefox)
+- Microsoft Edge (Desktop Edge)
 
-```json
-{
-  "require": ["tests-mocha-migration/setup.js"],
-  "diff": true,
-  "extension": ["js"],
-  "reporter": "spec",
-  "timeout": 60000,
-  "ui": "bdd",
-  "retries": 2,
-  "parallel": true,
-  "jobs": 2
-}
-```
+**Artifacts:**
+- Screenshots: Only on failure
+- Videos: Retained on failure
+- Trace: On first retry
 
-**Mocha Settings:**
-- **Test Setup**: `tests-mocha-migration/setup.js`
-- **Reporter**: Spec (detailed test output)
-- **Timeout**: 60 seconds per test
-- **UI Style**: BDD (Behavior-Driven Development)
-- **Retries**: 2 attempts on failure
-- **Parallel Execution**: Enabled (2 jobs)
-- **Assertion Libraries**: Chai (expect, should, assert)
-- **Browser Support**: Chromium, Firefox, WebKit
+### Mocha Configuration
 
-**Mocha Setup Features (`setup.js`):**
-- Global Chai assertions (expect, should, assert)
-- Browser initialization utilities for all three browser types
-- Authentication helpers for tests requiring logged-in users
-- Automatic cleanup after each test
-- Consistent test environment across all Mocha tests
+**Key Settings:**
+- **Setup File**: `src/configs/mochaConfigs/setup.js`
+- **Timeout**: 80 seconds per test
+- **Retries**: 2 attempts
+- **Parallel Execution**: 2 jobs
+- **Reporter**: Spec (detailed output)
 
-## 🏗️ Framework Features
+**Global Setup Features:**
+- Chai assertions (expect, should, assert) available globally
+- Browser initialization utilities for Chromium, Firefox, WebKit
+- Automatic user generation and authentication
+- Clean browser state between tests
 
-| Feature | Description |
-|---------|-------------|
-| **Architecture** | Page Object Model for maintainability |
-| **Test Data** | Centralized management system |
-| **User Generation** | Dynamic user creation for test isolation |
-| **Utilities** | Common operations and helpers |
-| **Dual Framework** | Playwright and Mocha support |
-| **Reporting** | Comprehensive HTML, JSON, and Spec reports |
-| **Error Handling** | Screenshots and videos on failure |
-| **Parallel Execution** | Faster test runs with 2 workers |
+## 🏗️ Framework Architecture
+
+### Page Object Model (POM)
+The framework implements a sophisticated POM pattern with:
+
+- **Page Objects**: Each page has dedicated class with locators and methods
+- **Components**: Reusable UI components (Navigation, Filters, Search, Pagination)
+- **Centralized Exports**: Clean import interface via [`src/po/index.js`](src/po/index.js:1)
+- **Factory Pattern**: Dynamic page instantiation with [`pages(pageName, page)`](src/po/Pages/index.js:25)
+- **Barrel Exports**: Organized component exports via [`src/po/Components/index.js`](src/po/Components/index.js:1)
+
+### Index.js Files Architecture
+
+The project uses barrel exports for clean module management:
+
+**Main PO Index** ([`src/po/index.js`](src/po/index.js:1)):
+- Centralizes all page and component exports
+- Provides single import point for test files
+- Exports both factory function and individual page classes
+
+**Pages Index** ([`src/po/Pages/index.js`](src/po/Pages/index.js:1)):
+- Factory function [`pages()`](src/po/Pages/index.js:25) for dynamic page instantiation
+- Case-insensitive page name resolution
+- Individual page class exports for direct imports
+- Implements DRY and SOLID principles
+
+**Components Index** ([`src/po/Components/index.js`](src/po/Components/index.js:1)):
+- Centralized component class exports
+- Clean import interface for page objects
+- Maintains component organization structure
+
+### Command Utilities
+The [`commands.js`](src/configs/utils/commands.js) file provides 40+ reusable functions organized by:
+
+1. **Profile Actions** - User profile management
+2. **Product Navigation & Search** - Product discovery workflows
+3. **Cart Operations** - Adding products and retrieving cart data
+4. **Cart Calculations & Validations** - Price calculations and validation logic
+5. **Filter Operations** - Category, brand, and eco-friendly filtering
+6. **Filter Validations** - Filter result validation functions
+7. **Pagination Validations** - Cross-page validation workflows
+8. **Language & Contact Actions** - Language switching and translation handling
+9. **Contact Form Validations** - Form field translation validations
+
+### Test Data Management
+Centralized test data in [`testData.js`](src/configs/utils/testData.js) includes:
+
+- **User Data**: Dynamic user generation with unique emails
+- **Product Data**: Search terms, category keywords, cart configurations
+- **Filter Data**: Subcategories, brands, multiple filter combinations
+- **Translation Data**: Complete multi-language mappings for contact forms
 
 ## 📊 Test Results and Reports
 
@@ -255,28 +283,25 @@ toolshop-automation-playwright/
 View the HTML report after test execution:
 
 ```bash
-npm run report
+npm run test:playwright:report
 ```
-
-**Reports include:**
-- Detailed test results
-- Execution timelines
-- Failure analysis
-- Screenshots and videos
-- Console logs
 
 **Report Locations:**
 - **HTML Report**: `./playwright-report/`
 - **Test Results**: `./test-results/`
 - **JSON Results**: `./test-results/results.json`
 
+**Reports include:**
+- Detailed test results with execution timelines
+- Failure analysis with screenshots and videos
+- Console logs and error traces
+
 ### Mocha Reports
 
-Mocha tests output results directly to the console using the Spec reporter, providing:
-- Real-time test execution feedback
-- Pass/fail status for each test
-- Execution time per test
+Mocha tests output real-time results using the Spec reporter, providing:
+- Pass/fail status for each test with execution time
 - Detailed error messages and stack traces
+- Clean test organization by describe/it blocks
 
 ## 🔧 Maintenance Guide
 
@@ -288,48 +313,46 @@ Mocha tests output results directly to the console using the Spec reporter, prov
    export class NewPage {
      constructor(page) {
        this.page = page;
-       // Define locators
+       // Define locators using data-test attributes
      }
-     // Add methods
+     // Add methods with JSDoc comments
    }
    ```
 
-2. **Add Playwright Test Specification**
+2. **Update Central Exports**
    ```javascript
-   // src/po/Tests/12-new-feature.spec.js
+   // src/po/Pages/index.js
+   export { NewPage } from './NewPage.js';
+   ```
+
+3. **Add Test Specification**
+   ```javascript
+   // For Playwright: src/tests/playwright-tests/12-new-feature.spec.js
    import { test, expect } from '@playwright/test';
-   import { NewPage } from '../Pages/NewPage';
+   import { pages } from '../../po/index.js';
+
+   // For Mocha: src/tests/mocha-chai-tests/12-new-feature.spec.js  
+   import { initializeBrowser, closeBrowser } from '../../configs/mochaConfigs/setup.js';
    ```
 
-3. **Add Mocha Test Specification** (if needed)
+4. **Add Utility Functions** (if needed)
    ```javascript
-   // tests-mocha-migration/12-new-feature.spec.js
-   import { initializeBrowser, closeBrowser } from './setup.js';
-   ```
-
-4. **Update Test Data**
-   ```javascript
-   // utils/testData.js
-   export const newFeatureData = { /* ... */ };
-   ```
-
-5. **Add Utility Functions** (if needed)
-   ```javascript
-   // utils/commands.js or utils/helpers.js
+   // src/configs/utils/commands.js
+   // Add to appropriate category section
    ```
 
 ### Updating Selectors
 
-When UI changes occur, update selectors in the corresponding Page Object class. All selectors use `data-test` attributes where available for maximum stability.
+When UI changes occur, update selectors in the corresponding Page Object class. All selectors prioritize `data-test` attributes for maximum stability.
 
 ### Best Practices
 
-- Keep Page Objects focused on a single page or component
-- Use descriptive method names that reflect user actions
-- Maintain test independence - each test should run in isolation
-- Use centralized test data from `utils/testData.js`
-- Add JSDoc comments for complex methods
-- Follow the existing naming conventions
+- **Page Objects**: Keep focused on single page/component responsibilities
+- **Method Names**: Use descriptive names reflecting user actions
+- **Test Independence**: Each test runs in isolation with fresh user data
+- **Documentation**: Add comprehensive JSDoc comments for complex methods
+- **Data Management**: Use centralized test data from `testData.js`
+- **Error Handling**: Implement proper wait strategies and error recovery
 
 ## 🤝 Contributing
 
@@ -345,10 +368,9 @@ Contributions are welcome! Please follow these steps:
 
 - Follow existing code structure and naming conventions
 - Use Page Object Model pattern for new pages
-- Add JSDoc comments for methods
-- Include test descriptions and comments
+- Add comprehensive JSDoc comments for methods
 - Ensure tests are independent and can run in any order
-- Write clear commit messages
+- Write clear commit messages following conventional commits
 
 ## 👤 Author
 
@@ -367,7 +389,5 @@ This project is licensed under the ISC License.
 - [Page Object Model Pattern](https://playwright.dev/docs/pom)
 
 ---
-
-*This README was created and formatted using [Dillinger](https://dillinger.io/) for easy markdown editing.*
 
 **Happy Testing! 🚀**

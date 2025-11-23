@@ -27,7 +27,40 @@ export async function updateProfilePhoneNumber(page, phoneNumber) {
       await myAccountPage.accessToProfile();
       await profilePage.updatePhoneNumber(phoneNumber);
 }
-// ==================== PRODUCT ACTIONS SECTION ====================
+
+// ==================== PRODUCT NAVIGATION & SEARCH SECTION ====================
+
+/**
+ * Navigate to products page and wait for initial load completion
+ * Primary entry point for product-related test scenarios
+ */
+export async function navigateToProductsPage(page) {
+  const productsPage = pages('products', page);
+  await productsPage.navigateToProductsPage();
+  await productsPage.waitForInitialProductsLoad();
+}
+
+/**
+ * Navigate to product detail page for specified product
+ * Simplified workflow for quick product access
+ */
+export async function goToProductDetail(page, productName) {
+  const productsPage = pages('products', page);
+  await productsPage.navigateToProductsPage();
+  await productsPage.waitForInitialProductsLoad();
+  await productsPage.searchAndSelectProduct(productName);
+}
+
+/**
+ * Search and select product from current products page
+ * Assumes user is already on products page
+ */
+export async function searchAndSelectProduct(page, productName) {
+  const productsPage = pages('products', page);
+  await productsPage.searchAndSelectProduct(productName);
+}
+
+// ==================== CART OPERATIONS SECTION ====================
 
 /**
  * Complete workflow to add product to cart with specified quantity
@@ -87,6 +120,8 @@ export async function getCartData(page) {
     cartTotal:  await cartPage.getCartTotal(),
   };
 }
+
+// ==================== CART CALCULATIONS & VALIDATIONS SECTION ====================
 
 /**
  * Calculate expected subtotal from product list
@@ -171,39 +206,7 @@ export function calculateLineTotalsError(cartLineTotals, products) {
   return sumLineTotalsDifferences(differences);
 }
 
-/**
- * Navigate to product detail page for specified product
- * Simplified workflow for quick product access
- */
-export async function goToProductDetail(page, productName) {
-  const productsPage = pages('products', page);
-  await productsPage.navigateToProductsPage();
-  await productsPage.waitForInitialProductsLoad();
-  await productsPage.searchAndSelectProduct(productName);
-}
-
-/**
- * Search and select product from current products page
- * Assumes user is already on products page
- */
-export async function searchAndSelectProduct(page, productName) {
-  const productsPage = pages('products', page);
-  await productsPage.searchAndSelectProduct(productName);
-}
-
-// ==================== NAVIGATION SECTION ====================
-
-/**
- * Navigate to products page and wait for initial load completion
- * Primary entry point for product-related test scenarios
- */
-export async function navigateToProductsPage(page) {
-  const productsPage = pages('products', page);
-  await productsPage.navigateToProductsPage();
-  await productsPage.waitForInitialProductsLoad();
-}
-
-// ==================== FILTER ACTIONS SECTION ====================
+// ==================== FILTER OPERATIONS SECTION ====================
 
 /**
  * Apply category filter using navigation menu
@@ -274,11 +277,58 @@ export async function filterByEcoFriendly(page) {
   await productsPage.clickEcoFriendlyFilter();
 }
 
+/**
+ * Apply multiple filters in sequence
+ * Combines category and brand filtering
+ */
 export async function applyMultipleFilters(page, category, brand) {
   await filterByCategory(page, category);
   await filterByBrand(page, brand);
 }
 
+// ==================== FILTER VALIDATIONS SECTION ====================
+
+/**
+ * Basic validation for multiple filter combinations
+ * Verifies category and brand filters produce expected results
+ */
+export async function validateMultipleFiltersBasic(
+  page,
+  category,
+  brand,
+  keywords
+) {
+  const productsPage = pages('products', page);
+  const errors = [];
+
+  await productsPage.waitForInitialProductsLoad();
+
+  const hasProducts = await productsPage.hasProductsVisible();
+  if (!hasProducts) {
+    errors.push(`No products visible for ${category} + ${brand}`);
+    return errors;
+  }
+
+  const firstProductName = await productsPage.productName.first().textContent();
+
+  // Use the provided keywords parameter instead of dynamic import
+  const productMatchesCategory = keywords.some((keyword) =>
+    firstProductName.toLowerCase().includes(keyword.toLowerCase())
+  );
+
+  if (!productMatchesCategory) {
+    errors.push(
+      `Product "${firstProductName}" does not match category "${category}" keywords: ${keywords.join(", ")}`
+    );
+  }
+
+  return errors;
+}
+
+/**
+ * Validate multiple filters and navigate to product details
+ * Combines validation with navigation workflow
+ */
 export async function validateMultipleFiltersAndNavigate(page, category, brand, keywords) {
   const errors = await validateMultipleFiltersBasic(page, category, brand, keywords);
   if (errors.length === 0) {
@@ -288,13 +338,10 @@ export async function validateMultipleFiltersAndNavigate(page, category, brand, 
   return errors;
 }
 
-export async function verifyProductDetails(page) {
-  const detailPage = pages('productdetail', page);
-  await detailPage.waitForProductData();
-  const actualBrand = await detailPage.getBrandBadgeText();
-  return actualBrand.trim();
-}
-
+/**
+ * Validate and navigate to product details with category-specific keywords
+ * Wrapper function for category-specific validation workflows
+ */
 export async function validateAndNavigateToProductDetails(page, category, brand, categoryKeywords) {
   const categoryKey = category.charAt(0).toLowerCase() + category.slice(1).replace(/\s+/g, '');
   const keywords = categoryKeywords[categoryKey];
@@ -302,7 +349,18 @@ export async function validateAndNavigateToProductDetails(page, category, brand,
   return errors;
 }
 
-// ==================== PAGINATION VALIDATION SECTION ====================
+/**
+ * Verify product details page loads correctly
+ * Validates product data availability and brand information
+ */
+export async function verifyProductDetails(page) {
+  const detailPage = pages('productdetail', page);
+  await detailPage.waitForProductData();
+  const actualBrand = await detailPage.getBrandBadgeText();
+  return actualBrand.trim();
+}
+
+// ==================== PAGINATION VALIDATIONS SECTION ====================
 
 /**
  * Generic pagination validation across all result pages
@@ -341,8 +399,6 @@ export async function validateAcrossPagination(
   return allErrors;
 }
 
-// ==================== SPECIFIC VALIDATION FUNCTIONS ====================
-
 /**
  * Validate no out-of-stock products across all pagination pages
  * Comprehensive stock availability check for filtered results
@@ -369,6 +425,14 @@ export async function validateKeywordsAcrossPagination(page, keywords) {
     }
     return [];
   });
+}
+
+/**
+ * Validate category keyword matching across pagination
+ * Wrapper function for category-specific keyword validation
+ */
+export async function validateCategoryKeywords(page, keywords) {
+  return validateKeywordsAcrossPagination(page, keywords);
 }
 
 /**
@@ -433,7 +497,7 @@ export async function validateEcoBadgesAcrossPagination(page) {
   });
 }
 
-// ==================== CONTACT PAGE SECTION ====================
+// ==================== LANGUAGE & CONTACT ACTIONS SECTION ====================
 
 /**
  * Change contact page language using dropdown selector
@@ -445,41 +509,20 @@ export async function changeLanguage(page, languageCode) {
 }
 
 /**
- * Basic validation for multiple filter combinations
- * Verifies category and brand filters produce expected results
+ * Change language on contact page and retrieve corresponding translations
+ * Combines language switching with translation data retrieval
+ *
+ * @param {Page} page - Playwright page object
+ * @param {string} langCode - Two-letter language code (DE, EN, ES, FR, NL, TR)
+ * @returns {Object} Translation object for the specified language
  */
-export async function validateMultipleFiltersBasic(
-  page,
-  category,
-  brand,
-  keywords
-) {
-  const productsPage = pages('products', page);
-  const errors = [];
-
-  await productsPage.waitForInitialProductsLoad();
-
-  const hasProducts = await productsPage.hasProductsVisible();
-  if (!hasProducts) {
-    errors.push(`No products visible for ${category} + ${brand}`);
-    return errors;
-  }
-
-  const firstProductName = await productsPage.productName.first().textContent();
-
-  // Use the provided keywords parameter instead of dynamic import
-  const productMatchesCategory = keywords.some((keyword) =>
-    firstProductName.toLowerCase().includes(keyword.toLowerCase())
-  );
-
-  if (!productMatchesCategory) {
-    errors.push(
-      `Product "${firstProductName}" does not match category "${category}" keywords: ${keywords.join(", ")}`
-    );
-  }
-
-  return errors;
+export async function changeLanguageAndGetTranslations(page, langCode) {
+  const contactPage = pages('contact', page);
+  await contactPage.navigationBar.changeLanguage(langCode);
+  return languageMap.contactTranslations[langCode];
 }
+
+// ==================== CONTACT FORM VALIDATIONS SECTION ====================
 
 /**
  * Validate contact form label translations
@@ -609,28 +652,6 @@ export async function validateContactSubmitButton(page, translations) {
   }
 
   return errors;
-}
-
-/**
- * Validate category keyword matching across pagination
- * Wrapper function for category-specific keyword validation
- */
-export async function validateCategoryKeywords(page, keywords) {
-  return validateKeywordsAcrossPagination(page, keywords);
-}
-
-/**
- * Change language on contact page and retrieve corresponding translations
- * Combines language switching with translation data retrieval
- *
- * @param {Page} page - Playwright page object
- * @param {string} langCode - Two-letter language code (DE, EN, ES, FR, NL, TR)
- * @returns {Object} Translation object for the specified language
- */
-export async function changeLanguageAndGetTranslations(page, langCode) {
-  const contactPage = pages('contact', page);
-  await contactPage.navigationBar.changeLanguage(langCode);
-  return languageMap.contactTranslations[langCode];
 }
 
 /**

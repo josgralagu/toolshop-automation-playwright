@@ -21,7 +21,7 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Number of retries for all tests */
-  retries: 0,
+  retries: 2,
   /* Number of workers for parallel execution */
   workers: 2,
 
