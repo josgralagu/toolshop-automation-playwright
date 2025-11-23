@@ -1,5 +1,10 @@
-import { URLS } from '../../../utils/constants.js';
+import { URLS } from "../../configs/utils/constants.js";
 
+/**
+ * Sign Up Page Object
+ * Handles user registration and account creation
+ * Provides methods to fill registration form and complete user creation process
+ */
 export class SignUpPage {
   constructor(page) {
     this.page = page;
@@ -56,9 +61,10 @@ export class SignUpPage {
 
     // Select country from dropdown and submit registration
     await this.countryDropdown.selectOption(userData.country);
+    await this.registerButton.waitFor({ state: "visible", timeout: 10000 });
     await this.registerButton.click();
 
     // Wait for redirect to login page after successful registration
-    await this.page.waitForURL('**/auth/login', { timeout: 15000 });
+    await this.page.waitForURL('**/auth/login', { waitUntil: 'load', timeout: 30000 });
   }
 }

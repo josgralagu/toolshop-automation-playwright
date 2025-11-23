@@ -47,6 +47,7 @@ export class MyAccountPage {
    * Navigate to favorites page via user menu
    */
   async goToMyFavorites() {
+    await this.openUserMenu();
     await this.myFavoritesLink.waitFor({ state: "visible", timeout: 10000 });
     await this.myFavoritesLink.click();
     await this.page.waitForURL("**/account/favorites", { timeout: 15000 });

@@ -1,3 +1,8 @@
+/**
+ * Favorites Page Object
+ * Handles interactions with the user's favorite products list
+ * Provides methods to manage and verify favorite products
+ */
 export class FavoritesPage {
   constructor(page) {
     this.page = page;

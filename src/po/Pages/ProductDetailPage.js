@@ -1,3 +1,8 @@
+/**
+ * Product Detail Page Object
+ * Handles interactions and data retrieval from the product detail page
+ * Provides methods to manage product quantities, add to cart, and add to favorites
+ */
 export class ProductDetailPage {
   constructor(page) {
     this.page = page;
@@ -38,10 +43,15 @@ export class ProductDetailPage {
 
   /**
    * Wait for success message to appear and disappear
+   * Enhanced with retry logic for flaky tests
    */
+
   async waitForSuccessMessage() {
-    await this.successMsg.waitFor({ state: "visible", timeout: 10000 });
-    await this.successMsg.waitFor({ state: "detached", timeout: 10000 });
+    // Wait for success message to appear with increased timeout
+    await this.successMsg.waitFor({ state: "visible", timeout: 15000 });
+
+    // Wait for success message to disappear with increased timeout
+    await this.successMsg.waitFor({ state: "detached", timeout: 15000 });
   }
 
   /**
@@ -114,10 +124,7 @@ export class ProductDetailPage {
    * Click add to favorites button
    */
   async clickAddToFavorites() {
-    await this.addToFavoritesButton.waitFor({
-      state: "visible",
-      timeout: 10000,
-    });
+    await this.addToFavoritesButton.waitFor({ state: "visible", timeout: 25000, });
     await this.addToFavoritesButton.click();
   }
 

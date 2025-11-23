@@ -1,5 +1,10 @@
-import { URLS } from '../../../utils/constants.js';
+import { URLS } from "../../configs/utils/constants.js";
 
+/**
+ * Sign In Page Object
+ * Handles user authentication and login functionality
+ * Provides methods to fill login form and complete authentication process
+ */
 export class SignInPage {
   constructor(page) {
     this.page = page;
@@ -43,6 +48,7 @@ export class SignInPage {
    * Click login button to submit form
    */
   async clickLogInButton() {
+    await this.logInButton.waitFor({ state: "visible", timeout: 15000 });
     await this.logInButton.click();
   }
 
