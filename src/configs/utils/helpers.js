@@ -15,3 +15,10 @@ export function generateUniqueEmail() {
   const random = Math.floor(Math.random() * 10000);
   return `test-${timestamp}-${random}@yopmail.com`;
 }
+
+export async function waitForProductsVisible(page, productLocator, containerLocator = null, timeout = 15000) {
+  if (containerLocator) {
+    await containerLocator.waitFor({ state: 'visible', timeout });
+  }
+  await productLocator.first().waitFor({ state: 'visible', timeout });
+}

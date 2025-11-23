@@ -1,11 +1,7 @@
 import { pages } from '../../po/index.js';
-import {
-  validateContactFormLabels,
-  validateContactFormPlaceholders,
-  validateContactSubmitButton
-} from '../../configs/utils/commands.js';
-import { languageMap } from '../../configs/utils/testData.js';
-import { initializeBrowser, closeBrowser } from '../../configs/mochaConfigs/setup.js';
+import { changeLanguageAndGetTranslations, validateNavigationElements, validateLabelsAndText, validateFormTranslations } from '../../configs/utils/commands.js';
+import { LANGUAGES } from '../../configs/utils/testData.js';
+import { initializeBrowser, closeBrowser, pwExpect } from '../../configs/mochaConfigs/setup.js';
 
 // ====================================================================
 // FEATURE: LANGUAGE CHANGE ON CONTACT PAGE TESTS - MIGRATED TO MOCHA + CHAI
@@ -16,8 +12,6 @@ import { initializeBrowser, closeBrowser } from '../../configs/mochaConfigs/setu
 const BROWSERS = ['chromium', 'firefox', 'webkit'];
 
 BROWSERS.forEach(browserName => {
-  const LANGUAGES = ['DE', 'EN', 'ES', 'FR', 'NL', 'TR'];
-
   describe(`Feature: Language Change on Contact Page [${browserName}]`, function () {
 
     let browserContext;
@@ -39,55 +33,27 @@ BROWSERS.forEach(browserName => {
      * Test language change functionality for all supported languages
      * Validates that all UI elements translate correctly
      */
-    for (const langCode of LANGUAGES) {
+    LANGUAGES.forEach(langCode => {
       it(`Change language to ${langCode}`, async function () {
         const { page } = browserContext;
-        const contactPage = pages('contact', page);
-        const translations = languageMap.contactTranslations[langCode];
 
-        // Change language using page object
-        await contactPage.navigationBar.changeLanguage(langCode);
+        // Cambiar idioma y obtener traducciones
+        const translations = await changeLanguageAndGetTranslations(page, langCode);
 
-        // Validate form labels translation
-        const labelErrors = await validateContactFormLabels(page, translations);
-        expect(labelErrors, `Form labels validation failed for ${langCode}`).to.deep.equal([]);
+        // Validar form labels, placeholders y submit button
+        const errors = await validateFormTranslations(page, translations);
+        expect(errors, `Validation failed for ${langCode}`).to.deep.equal([]);
 
-        // Validate form placeholders translation
-        const placeholderErrors = await validateContactFormPlaceholders(page, translations);
-        expect(placeholderErrors, `Placeholders validation failed for ${langCode}`).to.deep.equal([]);
+        // Validar elementos de navegación
+        await validateNavigationElements(page, translations);
 
-        // Validate submit button translation
-        const buttonErrors = await validateContactSubmitButton(page, translations);
-        expect(buttonErrors, `Submit button validation failed for ${langCode}`).to.deep.equal([]);
+        // Validar labels y texto
+        await validateLabelsAndText(page, translations);
 
-        // Validate navigation elements translation
-        const mainHeadingText = await contactPage.mainHeading.textContent();
-        expect(mainHeadingText).to.equal(translations.mainHeading);
-
-        const homeLinkText = await contactPage.navigationBar.homeLink.textContent();
-        expect(homeLinkText).to.equal(translations.homeLink);
-
-        const categoriesLinkText = await contactPage.navigationBar.categoriesLink.textContent();
-        expect(categoriesLinkText.trim()).to.equal(translations.categoriesLink);
-
-        const contactLinkText = await contactPage.navigationBar.contactLink.textContent();
-        expect(contactLinkText).to.equal(translations.contactLink);
-
-        const signInLinkText = await contactPage.navigationBar.signInLink.textContent();
-        expect(signInLinkText).to.equal(translations.signInLink);
-
-        // Validate warning label translation (partial match)
-        const warningLabelText = await contactPage.warningLabel.textContent();
-        expect(warningLabelText).to.include(translations.warningLabel.substring(0, 30));
-
-        // Validate info label translation (partial match)
-        const infoText = await contactPage.getNormalizedInfoText();
-        expect(infoText).to.include(translations.infoLabel.substring(0, 60).replace(/\s+/g, ' ').trim());
-
-        // Validate selected language in dropdown
-        const actualLanguage = await contactPage.navigationBar.getCurrentLanguage();
-        expect(actualLanguage.toUpperCase()).to.include(langCode);
+        // Validar idioma seleccionado en el dropdown
+        const actualLanguage = await pages('contact', page).navigationBar.getCurrentLanguage();
+        expect(actualLanguage.toUpperCase()).to.contain(langCode);
       });
-    }
+    });
   });
 });

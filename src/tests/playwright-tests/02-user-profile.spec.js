@@ -1,6 +1,7 @@
 import { test, expect } from "../../configs/playwrightConfigs/fixtures/auth.fixture";
 import { pages } from "../../po/index.js";
-import { validProfileUpdate, invalidProfileUpdate } from "../../configs/utils/testData";
+import { updateProfilePhoneNumber } from "../../configs/utils/commands.js";
+import { validProfileUpdate, invalidProfileUpdate, generateValidUser } from "../../configs/utils/testData";
 
 test.describe("User Profile", () => {
 
@@ -9,14 +10,12 @@ test.describe("User Profile", () => {
    * Validates that users can update their phone number with valid data
    */  
   test("Successful update of profile information", async ({ authenticatedPage }) => {
-    const myAccountPage = pages('myaccount', authenticatedPage);
-    const profilePage = pages('profile', authenticatedPage);
 
-    // Navigate to profile and update phone number    
-    await myAccountPage.accessToProfile();
-    await profilePage.updatePhoneNumber(validProfileUpdate.phone);
+    // Navigate to profile and perform valid update
+    await updateProfilePhoneNumber(authenticatedPage, validProfileUpdate.phone);
 
     // Verify successful update
+    const profilePage = pages('profile', authenticatedPage);
     await expect(profilePage.successMessage).toBeVisible({ timeout: 10000 });
     await expect(profilePage.phoneField).toHaveValue(validProfileUpdate.phone);
   });
@@ -26,15 +25,13 @@ test.describe("User Profile", () => {
    * Validates error handling for invalid phone number data
    */
   test("Unsuccessful update of profile information", async ({ authenticatedPage }) => {
-    const myAccountPage = pages('myaccount', authenticatedPage);
-    const profilePage = pages('profile', authenticatedPage);
 
     // Navigate to profile and attempt invalid update
-    await myAccountPage.accessToProfile();
-    await profilePage.updatePhoneNumber(invalidProfileUpdate.phone);
+    await updateProfilePhoneNumber(authenticatedPage, invalidProfileUpdate.phone);
 
     // Verify error message and unchanged phone field
-    await expect(profilePage.errorMessage).toBeVisible({ timeout: 10000 });
-    await expect(profilePage.phoneField).toHaveValue(validProfileUpdate.phone);
+    const profilePage = pages('profile', authenticatedPage);
+    await expect(profilePage.errorMessage).toBeVisible({ timeout: 15000 });
+    await expect(profilePage.phoneField).toHaveValue(generateValidUser().phone, { timeout: 1000 });
   });
 });

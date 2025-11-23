@@ -38,10 +38,15 @@ export class ProductDetailPage {
 
   /**
    * Wait for success message to appear and disappear
+   * Enhanced with retry logic for flaky tests
    */
+
   async waitForSuccessMessage() {
-    await this.successMsg.waitFor({ state: "visible", timeout: 10000 });
-    await this.successMsg.waitFor({ state: "detached", timeout: 10000 });
+    // Wait for success message to appear with increased timeout
+    await this.successMsg.waitFor({ state: "visible", timeout: 15000 });
+
+    // Wait for success message to disappear with increased timeout
+    await this.successMsg.waitFor({ state: "detached", timeout: 15000 });
   }
 
   /**

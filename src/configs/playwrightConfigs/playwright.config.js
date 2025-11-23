@@ -21,7 +21,7 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Number of retries for all tests */
-  retries: 2,
+  retries: 0,
   /* Number of workers for parallel execution */
   workers: 2,
 
@@ -56,6 +56,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         headless: true,
+        actionTimeout: 10000,
         viewport: { width: 1920, height: 1080 },
       },
     },
@@ -64,6 +65,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Firefox"],
         headless: true,
+        actionTimeout: 10000,
         viewport: { width: 1920, height: 1080 },
       },
     },
@@ -73,6 +75,7 @@ export default defineConfig({
         ...devices["Desktop Edge"],
         channel: "msedge",
         headless: true,
+        actionTimeout: 10000,
         viewport: { width: 1920, height: 1080 },
       },
     },

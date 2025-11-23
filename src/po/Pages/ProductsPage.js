@@ -32,6 +32,7 @@ export class ProductsPage extends BasePage {
      */
     async navigateToProductsPage() {
         await this.navigateTo(URLS.BASE);
+        await this.waitForInitialProductsLoad();
     }
 
     // ==================== SEARCH METHODS (Delegated to SearchComponent) ====================
@@ -177,9 +178,10 @@ export class ProductsPage extends BasePage {
 
     /**
      * Wait for initial products to load on page
+     * @param {number} timeout - Timeout in milliseconds (default: 15000)
      */
-    async waitForInitialProductsLoad() {
-        await this.waitForElementVisible(this.productName.first());
+    async waitForInitialProductsLoad(timeout = 15000) {
+        await this.waitForProductsVisible(this.productName, null, timeout);
     }
 
     // ==================== VALIDATION METHODS ====================

@@ -1,6 +1,8 @@
-export class ContactPage {
+import { BasePage } from './BasePage.js';
+
+export class ContactPage extends BasePage {
   constructor(page) {
-    this.page = page;
+    super(page);
 
     // ==================== MAIN CONTENT ELEMENTS ====================
     this.mainHeading = page.locator("h3");

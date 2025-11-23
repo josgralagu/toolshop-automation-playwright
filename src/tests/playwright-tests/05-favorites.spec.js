@@ -1,8 +1,7 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "../../configs/playwrightConfigs/fixtures/auth.fixture";
 import { pages } from "../../po/index.js";
-import { createAndLoginUser } from "../../configs/utils/userHelpers";
 import { goToProductDetail } from "../../configs/utils/commands";
-import { searchProducts, generateValidUser } from "../../configs/utils/testData";
+import { searchProducts } from "../../configs/utils/testData";
 
 
 test.describe("Favorite Products", () => {
@@ -11,21 +10,16 @@ test.describe("Favorite Products", () => {
    * Test removing a product from favorites list
    * Validates complete favorites management workflow
    */
-  test("Remove a product from favorites", async ({ page }) => {
-    const user = generateValidUser();
-
-    // Create user and login
-    await createAndLoginUser(page, user);
+  test("Remove a product from favorites", async ({ authenticatedPage }) => {
 
     // Add product to favorites
-    await goToProductDetail(page, searchProducts[0]);
-    const detailPage = pages('productdetail', page);
+    await goToProductDetail(authenticatedPage, searchProducts[0]);
+    const detailPage = pages('productdetail', authenticatedPage);
     await detailPage.addProductToFavorites();
 
     // Navigate to favorites and remove product
-    const myAccount = pages('myaccount', page);
-    const favPage = pages('favorites', page);
-    await myAccount.openUserMenu();
+    const myAccount = pages('myaccount', authenticatedPage);
+    const favPage = pages('favorites', authenticatedPage);
     await myAccount.goToMyFavorites();
     await favPage.waitForFavoritesLoad();
     await favPage.deleteFirstFavorite();

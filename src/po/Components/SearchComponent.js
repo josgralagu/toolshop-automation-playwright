@@ -4,6 +4,7 @@
 // Reusable search functionality component
 // Implements DRY principle by centralizing search-related logic
 // ====================================================================
+import { waitForProductsVisible } from '../../configs/utils/helpers.js';
 
 export class SearchComponent {
     constructor(page) {
@@ -43,16 +44,14 @@ export class SearchComponent {
      * Wait for search results to become visible
      * @param {number} timeout - Timeout in milliseconds (default: 15000)
      */
-    async waitForSearchResults(timeout = 15000) {
-        await this.searchResultsContainer.waitFor({
-            state: "visible",
-            timeout,
-        });
-        await this.searchResultsContainer
-            .locator('h5[data-test="product-name"]')
-            .first()
-            .waitFor({ state: "visible", timeout });
-    }
+async waitForSearchResults(timeout = 15000) {
+    await waitForProductsVisible(
+        this.page,
+        this.searchResultsContainer.locator('h5[data-test="product-name"]'),
+        this.searchResultsContainer,
+        timeout
+    );
+}
 
     /**
      * Get first product name from search results

@@ -11,7 +11,6 @@ test.describe("Product Details Page", () => {
   test.beforeEach(async ({ page }) => {
     const productsPage = pages('products', page);
     await productsPage.navigateToProductsPage();
-    await productsPage.waitForInitialProductsLoad();
 
     // Verify products are available
     const productCount = await productsPage.getProductCount();

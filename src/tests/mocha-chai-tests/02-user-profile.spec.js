@@ -1,5 +1,5 @@
-import { pages } from '../../po/index.js';
-import { validProfileUpdate, invalidProfileUpdate } from '../../configs/utils/testData.js';
+import { updateProfilePhoneNumber } from '../../configs/utils/commands.js';
+import { validProfileUpdate, invalidProfileUpdate, generateValidUser } from '../../configs/utils/testData.js';
 import { initializeBrowser, closeBrowser, getAuthenticatedPage, pwExpect } from '../../configs/mochaConfigs/setup.js';
 
 // ====================================================================
@@ -39,19 +39,14 @@ BROWSERS.forEach(browserName => {
      */
     it('Successful update of profile information', async function () {
       const { page } = browserContext;
-      const myAccountPage = pages('myaccount', page);
+
+      // Navigate to profile and perform valid update using command
+      await updateProfilePhoneNumber(page, validProfileUpdate.phone);
+
+      // Verify successful update
       const profilePage = pages('profile', page);
-
-      // Navigate to profile and update phone number
-      await myAccountPage.accessToProfile();
-      await profilePage.updatePhoneNumber(validProfileUpdate.phone);
-
-      // PLAYWRIGHT EXPECT: Verify element is visible
       await pwExpect(profilePage.successMessage).toBeVisible({ timeout: 10000 });
-
-      // CHAI EXPECT: Verify the value was correctly updated (fluent comparison)
-      const phoneValue = await profilePage.phoneField.inputValue();
-      expect(phoneValue).to.equal(validProfileUpdate.phone);
+      await pwExpect(profilePage.phoneField).toHaveValue(validProfileUpdate.phone);
     });
 
     /**
@@ -63,19 +58,14 @@ BROWSERS.forEach(browserName => {
      */
     it('Unsuccessful update of profile information', async function () {
       const { page } = browserContext;
-      const myAccountPage = pages('myaccount', page);
+
+      // Navigate to profile and attempt invalid update using command
+      await updateProfilePhoneNumber(page, invalidProfileUpdate.phone);
+
+      // Verify error message and unchanged phone field
       const profilePage = pages('profile', page);
-
-      // Navigate to profile and attempt invalid update
-      await myAccountPage.accessToProfile();
-      await profilePage.updatePhoneNumber(invalidProfileUpdate.phone);
-
-      // PLAYWRIGHT EXPECT: Verify element is visible
       await pwExpect(profilePage.errorMessage).toBeVisible({ timeout: 15000 });
-
-      // CHAI EXPECT: Verify phone field shows the valid value that was loaded at the beginning (fluent comparison)
-      const phoneValue = await profilePage.phoneField.inputValue();
-      expect(phoneValue).to.equal(validProfileUpdate.phone);
+      await pwExpect(profilePage.phoneField).toHaveValue(generateValidUser().phone, { timeout: 1000 });
     });
   });
 });

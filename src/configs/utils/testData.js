@@ -133,6 +133,8 @@ export const subcategoriesWithNoResults = ["Grinder"];
 
 // ==================== TRANSLATION DATA SECTION ====================
 
+export const LANGUAGES = ["DE", "EN", "ES", "FR", "NL", "TR"];
+
 /**
  * Complete translation mappings for contact page language tests
  * Supports DE, EN, ES, FR, NL, TR languages

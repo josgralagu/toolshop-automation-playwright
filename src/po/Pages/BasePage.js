@@ -6,6 +6,7 @@
 // ====================================================================
 
 import { NavigationBarComponent } from '../Components/index.js';
+import { waitForProductsVisible } from '../../configs/utils/helpers.js';
 
 export class BasePage {
     constructor(page) {
@@ -23,6 +24,16 @@ export class BasePage {
     async waitForElementVisible(locator, timeout = 10000) {
         // Use first() to avoid strict mode violation for multi-element locators
         await locator.first().waitFor({ state: 'visible', timeout });
+    }
+
+    /**
+     * Wait for products to become visible with optional container
+     * @param {Locator} productLocator - Product element locator
+     * @param {Locator} containerLocator - Container element locator (optional)
+     * @param {number} timeout - Timeout in milliseconds (default: 15000)
+     */
+    async waitForProductsVisible(productLocator, containerLocator = null, timeout = 15000) {
+        await waitForProductsVisible(this.page, productLocator, containerLocator, timeout);
     }
 
     /**
