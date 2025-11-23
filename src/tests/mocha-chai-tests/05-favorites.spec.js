@@ -46,7 +46,6 @@ BROWSERS.forEach(browserName => {
       // Navigate to favorites and remove product
       const myAccount = pages('myaccount', page);
       const favPage = pages('favorites', page);
-      await myAccount.openUserMenu();
       await myAccount.goToMyFavorites();
       await favPage.waitForFavoritesLoad();
       await favPage.deleteFirstFavorite();
