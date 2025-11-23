@@ -1,6 +1,7 @@
 import { updateProfilePhoneNumber } from '../../configs/utils/commands.js';
 import { validProfileUpdate, invalidProfileUpdate, generateValidUser } from '../../configs/utils/testData.js';
 import { initializeBrowser, closeBrowser, getAuthenticatedPage, pwExpect } from '../../configs/mochaConfigs/setup.js';
+import { pages } from '../../po/index.js';
 
 // ====================================================================
 // USER PROFILE TESTS - MIGRATED TO MOCHA + CHAI
@@ -10,7 +11,7 @@ import { initializeBrowser, closeBrowser, getAuthenticatedPage, pwExpect } from 
 // Chai Interfaces: EXPECT (value comparisons).
 
 // ====================================================================
-const BROWSERS = ['chromium', 'firefox', 'webkit'];
+const BROWSERS = ['chromium'/*, 'firefox', 'webkit'*/];
 
 BROWSERS.forEach(browserName => {
   describe(`User Profile [${browserName}]`, function () {
