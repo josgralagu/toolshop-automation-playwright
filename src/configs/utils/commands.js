@@ -11,11 +11,19 @@ import { pages } from "../../po/index.js";
 import { languageMap } from './testData.js';
 
 // ==================== PROFILE ACTIONS SECTION ====================
+
+/**
+ * Update user profile phone number
+ * Navigates to profile page and updates the phone number field
+ *
+ * @param {Page} page - Playwright page object
+ * @param {string} phoneNumber - New phone number to set
+ */
 export async function updateProfilePhoneNumber(page, phoneNumber) {
       const myAccountPage = pages('myaccount', page);
       const profilePage = pages('profile', page);
   
-      // Navigate to profile and update phone number    
+      // Navigate to profile and update phone number
       await myAccountPage.accessToProfile();
       await profilePage.updatePhoneNumber(phoneNumber);
 }
@@ -35,19 +43,35 @@ export async function addProductToCart(page, productName, quantity = 1) {
   await detailPage.addToCartByPlusClicks(quantity - 1);
 }
 
+/**
+ * Add multiple products to cart and collect their data
+ * Iterates through product list, adds each to cart, and collects price information
+ *
+ * @param {Page} page - Playwright page object
+ * @param {string[]} productNames - Array of product names to add
+ * @param {number} qtyPerProduct - Quantity of each product to add
+ * @returns {Array} Array of product objects with name, quantity, and price
+ */
 export async function addProductsAndCollectData(page, productNames, qtyPerProduct) {
   const detailPage = pages('productdetail', page);
   const products = [];
 
   for (let i = 0; i < productNames.length; i++) {
     const name = productNames[i];
-    await addProductToCart(page, name, qtyPerProduct); // tu comando ya existente
+    await addProductToCart(page, name, qtyPerProduct);
     const price = await detailPage.getProductPrice();
     products.push({ name, qty: qtyPerProduct, price });
   }
   return products;
 }
 
+/**
+ * Retrieve comprehensive cart data including products, quantities, and totals
+ * Navigates to cart page and collects all relevant cart information
+ *
+ * @param {Page} page - Playwright page object
+ * @returns {Object} Cart data object with names, quantities, prices, line totals, and cart total
+ */
 export async function getCartData(page) {
   const detailPage = pages('productdetail', page);
   const cartPage   = pages('cart', page);
@@ -64,22 +88,55 @@ export async function getCartData(page) {
   };
 }
 
+/**
+ * Calculate expected subtotal from product list
+ * Sums the product of price and quantity for all products
+ *
+ * @param {Array} products - Array of product objects with price and quantity
+ * @returns {number} Calculated subtotal
+ */
 export function calculateExpectedSubtotal(products) {
   return products.reduce((sum, p) => sum + p.price * p.qty, 0);
 }
 
+/**
+ * Extract product names from product array
+ *
+ * @param {Array} products - Array of product objects
+ * @returns {string[]} Array of product names
+ */
 export function getProductNames(products) {
   return products.map(p => p.name);
 }
 
+/**
+ * Extract product quantities from product array
+ *
+ * @param {Array} products - Array of product objects
+ * @returns {number[]} Array of product quantities
+ */
 export function getProductQuantities(products) {
   return products.map(p => p.qty);
 }
 
+/**
+ * Extract product prices from product array
+ *
+ * @param {Array} products - Array of product objects
+ * @returns {number[]} Array of product prices
+ */
 export function getProductPrices(products) {
   return products.map(p => p.price);
 }
 
+/**
+ * Calculate differences between actual and expected line totals
+ * Compares cart line totals with calculated expected values
+ *
+ * @param {number[]} cartLineTotals - Actual line totals from cart
+ * @param {Array} products - Array of product objects for expected calculation
+ * @returns {Array} Array of difference objects with index, actual, expected, and diff
+ */
 export function getLineTotalsDifferences(cartLineTotals, products) {
   return cartLineTotals.map((actual, i) => {
     const expected = products[i].price * products[i].qty;
@@ -92,10 +149,23 @@ export function getLineTotalsDifferences(cartLineTotals, products) {
   });
 }
 
+/**
+ * Sum all line total differences
+ *
+ * @param {Array} differences - Array of difference objects from getLineTotalsDifferences
+ * @returns {number} Total sum of all differences
+ */
 export function sumLineTotalsDifferences(differences) {
   return differences.reduce((sum, item) => sum + item.diff, 0);
 }
 
+/**
+ * Calculate total line totals error for cart validation
+ *
+ * @param {number[]} cartLineTotals - Actual line totals from cart
+ * @param {Array} products - Array of product objects for expected calculation
+ * @returns {number} Total error across all line items
+ */
 export function calculateLineTotalsError(cartLineTotals, products) {
   const differences = getLineTotalsDifferences(cartLineTotals, products);
   return sumLineTotalsDifferences(differences);
@@ -549,12 +619,27 @@ export async function validateCategoryKeywords(page, keywords) {
   return validateKeywordsAcrossPagination(page, keywords);
 }
 
+/**
+ * Change language on contact page and retrieve corresponding translations
+ * Combines language switching with translation data retrieval
+ *
+ * @param {Page} page - Playwright page object
+ * @param {string} langCode - Two-letter language code (DE, EN, ES, FR, NL, TR)
+ * @returns {Object} Translation object for the specified language
+ */
 export async function changeLanguageAndGetTranslations(page, langCode) {
   const contactPage = pages('contact', page);
   await contactPage.navigationBar.changeLanguage(langCode);
   return languageMap.contactTranslations[langCode];
 }
 
+/**
+ * Validate navigation elements translations on contact page
+ * Checks main heading and all navigation links against expected translations
+ *
+ * @param {Page} page - Playwright page object
+ * @param {Object} translations - Translation object with navigation text
+ */
 export async function validateNavigationElements(page, translations) {
   const contactPage = pages('contact', page);
   await expect(contactPage.mainHeading).toHaveText(translations.mainHeading);
@@ -564,6 +649,13 @@ export async function validateNavigationElements(page, translations) {
   await expect(contactPage.navigationBar.signInLink).toHaveText(translations.signInLink);
 }
 
+/**
+ * Validate warning and info text translations on contact page
+ * Uses substring matching for dynamic content validation
+ *
+ * @param {Page} page - Playwright page object
+ * @param {Object} translations - Translation object with warning and info text
+ */
 export async function validateLabelsAndText(page, translations) {
   const contactPage = pages('contact', page);
   await expect(contactPage.warningLabel).toContainText(translations.warningLabel.substring(0, 30));
@@ -571,6 +663,14 @@ export async function validateLabelsAndText(page, translations) {
   expect(infoText).toContain(translations.infoLabel.substring(0, 60).replace(/\s+/g, ' ').trim());
 }
 
+/**
+ * Comprehensive contact form translation validation
+ * Combines label, placeholder, and button translation checks
+ *
+ * @param {Page} page - Playwright page object
+ * @param {Object} translations - Complete translation object for contact form
+ * @returns {Array} Combined array of all translation validation errors
+ */
 export async function validateFormTranslations(page, translations) {
   const labelErrors = await validateContactFormLabels(page, translations);
   const placeholderErrors = await validateContactFormPlaceholders(page, translations);

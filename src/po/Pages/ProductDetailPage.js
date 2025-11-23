@@ -1,3 +1,8 @@
+/**
+ * Product Detail Page Object
+ * Handles interactions and data retrieval from the product detail page
+ * Provides methods to manage product quantities, add to cart, and add to favorites
+ */
 export class ProductDetailPage {
   constructor(page) {
     this.page = page;

@@ -1,5 +1,10 @@
 import { URLS } from "../../configs/utils/constants.js";
 
+/**
+ * Sign In Page Object
+ * Handles user authentication and login functionality
+ * Provides methods to fill login form and complete authentication process
+ */
 export class SignInPage {
   constructor(page) {
     this.page = page;

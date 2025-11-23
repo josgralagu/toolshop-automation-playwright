@@ -16,6 +16,15 @@ export function generateUniqueEmail() {
   return `test-${timestamp}-${random}@yopmail.com`;
 }
 
+/**
+ * Wait for products to become visible on the page
+ * Handles both container and individual product visibility with configurable timeout
+ *
+ * @param {Page} page - Playwright page object
+ * @param {Locator} productLocator - Locator for product elements
+ * @param {Locator} containerLocator - Optional container locator for parent element
+ * @param {number} timeout - Maximum wait time in milliseconds (default: 15000)
+ */
 export async function waitForProductsVisible(page, productLocator, containerLocator = null, timeout = 15000) {
   if (containerLocator) {
     await containerLocator.waitFor({ state: 'visible', timeout });

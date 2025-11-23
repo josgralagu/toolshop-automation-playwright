@@ -1,5 +1,10 @@
 import { URLS } from "../../configs/utils/constants.js";
 
+/**
+ * Sign Up Page Object
+ * Handles user registration and account creation
+ * Provides methods to fill registration form and complete user creation process
+ */
 export class SignUpPage {
   constructor(page) {
     this.page = page;

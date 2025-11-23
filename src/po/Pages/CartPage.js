@@ -1,3 +1,8 @@
+/**
+ * Cart Page Object
+ * Handles interactions and data retrieval from the shopping cart page
+ * Provides methods to access product information, quantities, prices, and totals
+ */
 export class CartPage {
   constructor(page) {
     this.page = page;

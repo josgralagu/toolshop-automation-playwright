@@ -1,3 +1,8 @@
+/**
+ * Profile Page Object
+ * Handles interactions and data management on the user profile page
+ * Provides methods to update user profile information and handle form submissions
+ */
 export class ProfilePage {
   constructor(page) {
     this.page = page;

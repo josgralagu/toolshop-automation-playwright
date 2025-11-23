@@ -11,20 +11,20 @@ test.describe("Feature: Language Change on Contact Page", () => {
 
   LANGUAGES.forEach(langCode => {
     test(`Change language to ${langCode}`, async ({ page }) => {
-      // Cambiar idioma y obtener traducciones
+      // Change language and get translations
       const translations = await changeLanguageAndGetTranslations(page, langCode);
 
-      // Validar form labels, placeholders y submit button
+      // Validate form labels, placeholders and submit button
       const errors = await validateFormTranslations(page, translations);
       expect(errors, `Validation failed for ${langCode}`).toEqual([]);
 
-      // Validar elementos de navegación
+      // Validate navigation elements
       await validateNavigationElements(page, translations);
 
-      // Validar labels y texto
+      // Validate labels and text
       await validateLabelsAndText(page, translations);
 
-      // Validar idioma seleccionado en el dropdown
+      // Validate selected language in dropdown
       const actualLanguage = await pages('contact', page).navigationBar.getCurrentLanguage();
       expect(actualLanguage.toUpperCase()).toContain(langCode);
     });
