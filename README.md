@@ -1,6 +1,6 @@
 # 🧪 Toolshop Automation Framework
 
-> A comprehensive automated testing framework built with Playwright and Mocha for the Practice Software Testing demo application.
+> A comprehensive automated testing framework built with Playwright, Mocha, and Supertest for end-to-end (E2E), UI, and API testing of the Practice Software Testing demo application.
 
 [![Playwright](https://img.shields.io/badge/Playwright-1.56.1-45ba4b?logo=playwright)](https://playwright.dev/)
 [![Mocha](https://img.shields.io/badge/Mocha-11.7.5-8D6748?logo=mocha)](https://mochajs.org/)
@@ -9,15 +9,16 @@
 
 ## 📋 Project Overview
 
-This project implements end-to-end tests covering key e-commerce functionalities including:
+This project implements comprehensive automated tests covering key e-commerce functionalities including:
 - User profiles management
 - Product catalog and details
 - Shopping cart operations
 - Favorites system
 - Advanced filtering capabilities
 - Multi-language support
+- API endpoint validation
 
-The framework supports both **Playwright native tests** and **Mocha-based test migrations**, providing flexibility for different testing approaches.
+The framework supports three testing approaches: **Playwright native tests** for E2E scenarios, **Mocha-Chai tests** for UI validations, and **Supertest** for API testing, providing flexibility and comprehensive coverage.
 
 ## 🛠️ Technical Stack
 
@@ -26,7 +27,10 @@ The framework supports both **Playwright native tests** and **Mocha-based test m
 | **Testing Framework** | Playwright 1.56.1 |
 | **Test Runner** | Mocha 11.7.5 |
 | **Assertion Library** | Chai 6.2.1 |
+| **HTTP Testing** | Supertest 7.1.4 |
+| **Validation Library** | Joi 18.0.2 |
 | **Language** | JavaScript (ES Modules) |
+| **Node.js Version** | 16+ |
 | **Architecture** | Page Object Model (POM) |
 | **Reporters** | HTML, List, JSON, Spec |
 | **Browsers** | Chromium, Firefox, Microsoft Edge |
@@ -60,11 +64,49 @@ npm install
 npx playwright install
 ```
 
+## ⚡ Quick Start
+
+### Run all tests (UI + E2E + API)
+
+```bash
+npm run test:all
+```
+
+### Run only Playwright E2E tests
+
+```bash
+npm run test:playwright
+```
+
+### Run only Mocha UI tests
+
+```bash
+npm run test:mocha
+```
+
+### Run API tests
+
+```bash
+npm run test:api
+```
+
+### View results
+
+```bash
+npm run test:playwright:report
+```
+
 ## 📁 Project Structure
 
 ```
 toolshop-automation-playwright/
 ├── src/
+│   ├── api/                               # API Testing Module
+│   │   ├── configs/
+│   │   │   └── .mocharc.json              # Mocha configuration for API tests
+│   │   ├── business/                      # API business logic classes
+│   │   ├── tests/                         # API test specifications
+│   │   └── utilities/                     # API utility functions
 │   ├── configs/
 │   │   ├── mochaConfigs/
 │   │   │   ├── .mocharc.json              # Mocha configuration
@@ -121,6 +163,7 @@ toolshop-automation-playwright/
 │           ├── 10-filters-multiple.spec.js
 │           └── 11-language.spec.js
 ├── package.json                           # Project dependencies and scripts
+├── package-lock.json                      # Locked dependency versions
 └── README.md                             # This file
 ```
 
@@ -148,6 +191,13 @@ toolshop-automation-playwright/
 | `npm run test:mocha:watch` | Run Mocha tests in watch mode |
 | `npm run test:mocha:serial` | Run Mocha tests sequentially |
 | `npm run test:mocha:reporter` | Run with detailed spec reporter |
+| `npm run test:mocha:grep` | Run tests matching a specific pattern |
+
+### API Tests
+
+| Command | Description |
+|---------|-------------|
+| `npm run test:api` | Run API tests with Mocha and Supertest |
 
 ### Combined Test Execution
 
@@ -186,6 +236,24 @@ toolshop-automation-playwright/
 - ✅ Multi-language support (DE, EN, ES, FR, NL, TR)
 - ✅ Contact form translation verification
 - ✅ Navigation element translation validation
+
+## 🔌 API Testing Module
+
+The project includes a dedicated API testing module using Mocha and Supertest for testing backend endpoints:
+
+**Location**: `src/api/`
+
+**Key Components**:
+- **Business Logic** (`src/api/business/`): API business logic classes for request handling
+- **Tests** (`src/api/tests/`): API test specifications
+- **Utilities** (`src/api/utilities/`): Helper functions for API operations
+- **Configuration** (`src/api/configs/`): Mocha setup for API test environment
+
+**Technology Stack**:
+- Supertest - HTTP assertions for API testing
+- Mocha - Test runner
+- Chai - Assertion library
+- Joi - Schema validation for responses
 
 ## ⚙️ Configuration Details
 
@@ -303,6 +371,31 @@ Mocha tests output real-time results using the Spec reporter, providing:
 - Detailed error messages and stack traces
 - Clean test organization by describe/it blocks
 
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**Issue**: Tests timeout or fail to connect to the application
+- **Solution**: Ensure `https://practicesoftwaretesting.com` is accessible and not blocked by your network/firewall
+- Verify Node.js and npm are properly installed
+- Run `npm install` again to ensure all dependencies are installed
+
+**Issue**: Playwright browser fails to launch
+- **Solution**: Run `npx playwright install` to install browser binaries
+- Check that you have sufficient disk space for browser installation
+
+**Issue**: Mocha tests fail with "Browser not initialized"
+- **Solution**: Ensure the setup file is properly configured in `.mocharc.json`
+- Verify that `initializeBrowser()` is called before running tests
+
+**Issue**: Port conflicts or tests running simultaneously
+- **Solution**: Run tests serially using `npm run test:mocha:serial` or `npm run test:playwright` (single worker)
+- Check that no other processes are using required ports
+
+**Issue**: Snapshot or selector issues after UI updates
+- **Solution**: Update locators in the corresponding Page Object classes
+- Prioritize `data-test` attributes over CSS selectors when possible
+
 ## 🔧 Maintenance Guide
 
 ### Adding New Tests
@@ -385,6 +478,8 @@ This project is licensed under the ISC License.
 - [Playwright Documentation](https://playwright.dev/)
 - [Mocha Documentation](https://mochajs.org/)
 - [Chai Assertion Library](https://www.chaijs.com/)
+- [Supertest Documentation](https://github.com/visionmedia/supertest)
+- [Joi Validation Library](https://joi.dev/)
 - [Practice Software Testing](https://practicesoftwaretesting.com)
 - [Page Object Model Pattern](https://playwright.dev/docs/pom)
 
