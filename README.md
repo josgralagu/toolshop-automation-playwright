@@ -90,26 +90,36 @@ npm run test:mocha
 npm run test:api
 ```
 
-### View results
+### View Playwright results
 
 ```bash
 npm run test:playwright:report
 ```
 
+### View Mocha UI results
+
+The HTML report opens automatically after running `npm run test:mocha`. Find it in `reports/ui/mocha-reports/`
+
+### View API test results
+
+The HTML report opens automatically after running `npm run test:api`. Find it in `reports/api/mocha-reports/`
+
 ## 📁 Project Structure
 
 ```
 toolshop-automation-playwright/
+├── api/                                   # API Testing Module
+│   ├── configs/
+│   │   ├── .mocharc.json                  # Mocha configuration for API tests
+│   │   ├── api.setup.js                   # API test setup and configuration
+│   │   └── api.config.js                  # API configuration settings
+│   ├── business/                          # API business logic classes
+│   ├── tests/                             # API test specifications
+│   └── utilities/                         # API utility functions
 ├── src/
-│   ├── api/                               # API Testing Module
-│   │   ├── configs/
-│   │   │   └── .mocharc.json              # Mocha configuration for API tests
-│   │   ├── business/                      # API business logic classes
-│   │   ├── tests/                         # API test specifications
-│   │   └── utilities/                     # API utility functions
 │   ├── configs/
 │   │   ├── mochaConfigs/
-│   │   │   ├── .mocharc.json              # Mocha configuration
+│   │   │   └── .mocharc.json              # Mocha configuration for UI tests
 │   │   │   └── setup.js                   # Mocha global setup with Chai assertions
 │   │   ├── playwrightConfigs/
 │   │   │   ├── fixtures/
@@ -162,9 +172,17 @@ toolshop-automation-playwright/
 │           ├── 09-filters-sustainability.spec.js
 │           ├── 10-filters-multiple.spec.js
 │           └── 11-language.spec.js
+├── reports/                               # Test reports (generated, excluded from Git)
+│   ├── api/                               # API test reports
+│   │   └── mocha-reports/                 # HTML reports from Mochawesome
+│   └── ui/                                # UI test reports
+│       ├── mocha-reports/                 # HTML reports from Mochawesome
+│       ├── playwright-reports/            # Playwright HTML reports
+│       └── playwright-test-results/       # Playwright JSON results
 ├── package.json                           # Project dependencies and scripts
 ├── package-lock.json                      # Locked dependency versions
-└── README.md                             # This file
+├── .gitignore                             # Git exclusions (reports, node_modules)
+└── README.md                              # This file
 ```
 
 ## 🎯 Test Execution
@@ -186,18 +204,18 @@ toolshop-automation-playwright/
 
 | Command | Description |
 |---------|-------------|
-| `npm run test:mocha` | Run all Mocha tests |
+| `npm run test:mocha` | Run all Mocha tests with HTML and Spec reporters |
 | `npm run test:mocha:file` | Run single Mocha test file |
 | `npm run test:mocha:watch` | Run Mocha tests in watch mode |
 | `npm run test:mocha:serial` | Run Mocha tests sequentially |
-| `npm run test:mocha:reporter` | Run with detailed spec reporter |
-| `npm run test:mocha:grep` | Run tests matching a specific pattern |
+| `npm run test:mocha:specreporter` | Run with detailed Spec reporter in console |
+| `npm run test:mocha:grep -- "pattern"` | Run tests matching a specific pattern |
 
 ### API Tests
 
 | Command | Description |
 |---------|-------------|
-| `npm run test:api` | Run API tests with Mocha and Supertest |
+| `npm run test:api` | Run API tests with HTML and Spec reporters |
 
 ### Combined Test Execution
 
@@ -206,6 +224,26 @@ toolshop-automation-playwright/
 | `npm run test:all` | Run both Playwright and Mocha tests sequentially |
 | `npm run test:all:headed` | Run tests in headed mode |
 | `npm run test:all:parallel` | Run both test frameworks in parallel |
+
+### Running Tests by Pattern (Grep)
+
+Filter and run tests matching a specific pattern using the grep command:
+
+```bash
+# Run tests with "user-profile" in the name
+npm run test:mocha:grep -- "user-profile"
+
+# Run tests with "checkout" in the name
+npm run test:mocha:grep -- "checkout"
+
+# Run tests with "filter" in the name
+npm run test:mocha:grep -- "filter"
+
+# Run tests with "language" in the name
+npm run test:mocha:grep -- "language"
+```
+
+This feature allows you to execute specific test suites without running the entire test suite, useful for focused testing and debugging.
 
 ## 🧩 Test Coverage
 
@@ -239,15 +277,20 @@ toolshop-automation-playwright/
 
 ## 🔌 API Testing Module
 
-The project includes a dedicated API testing module using Mocha and Supertest for testing backend endpoints:
+The project includes a dedicated API testing module at the root level using Mocha and Supertest for testing backend endpoints:
 
-**Location**: `src/api/`
+**Location**: `api/` (root directory)
 
 **Key Components**:
-- **Business Logic** (`src/api/business/`): API business logic classes for request handling
-- **Tests** (`src/api/tests/`): API test specifications
-- **Utilities** (`src/api/utilities/`): Helper functions for API operations
-- **Configuration** (`src/api/configs/`): Mocha setup for API test environment
+- **Business Logic** (`api/business/`): API business logic classes for request handling
+- **Tests** (`api/tests/`): API test specifications
+- **Utilities** (`api/utilities/`): Helper functions for API operations
+- **Configuration** (`api/configs/`): Mocha setup and configuration for API test environment
+
+**Configuration Files**:
+- `.mocharc.json` - Mocha configuration with Spec and Mochawesome reporters
+- `api.setup.js` - API test setup and global configuration
+- `api.config.js` - API configuration settings
 
 **Technology Stack**:
 - Supertest - HTTP assertions for API testing
@@ -284,13 +327,35 @@ The project includes a dedicated API testing module using Mocha and Supertest fo
 - **Timeout**: 80 seconds per test
 - **Retries**: 2 attempts
 - **Parallel Execution**: 2 jobs
-- **Reporter**: Spec (detailed output)
+- **Reporters**: Spec (console) + Mochawesome (HTML)
 
 **Global Setup Features:**
 - Chai assertions (expect, should, assert) available globally
 - Browser initialization utilities for Chromium, Firefox, WebKit
 - Automatic user generation and authentication
 - Clean browser state between tests
+
+**Reporter Configuration:**
+- **Spec Reporter**: Outputs detailed test results to console with real-time feedback
+- **Mochawesome Reporter**: Generates interactive HTML reports with charts, code view, and detailed test information
+- **Report Location**: `reports/ui/mocha-reports/` for UI tests, `reports/api/mocha-reports/` for API tests
+
+### API Configuration
+
+**Key Settings:**
+- **Setup File**: `api/configs/api.setup.js`
+- **Config File**: `api/configs/.mocharc.json`
+- **Timeout**: 80 seconds per test
+- **Retries**: 2 attempts
+- **Parallel Execution**: Disabled (serial) for API testing stability
+- **Reporters**: Spec (console) + Mochawesome (HTML)
+
+**Features:**
+- Supertest for HTTP assertions
+- Joi schema validation for response bodies
+- Automatic test data generation
+- Comprehensive API endpoint testing
+- Dedicated API module at project root for clear separation from UI tests
 
 ## 🏗️ Framework Architecture
 
@@ -346,30 +411,79 @@ Centralized test data in [`testData.js`](src/configs/utils/testData.js) includes
 
 ## 📊 Test Results and Reports
 
+The framework integrates multiple reporters for comprehensive test result visualization across all testing frameworks (Playwright, Mocha UI, and Mocha API).
+
 ### Playwright Reports
 
-View the HTML report after test execution:
+Playwright tests generate HTML, JSON, and List format reports:
 
 ```bash
 npm run test:playwright:report
 ```
 
 **Report Locations:**
-- **HTML Report**: `./playwright-report/`
-- **Test Results**: `./test-results/`
-- **JSON Results**: `./test-results/results.json`
+- **HTML Report**: `./reports/ui/playwright-reports/`
+- **Test Results**: `./reports/ui/playwright-test-results/`
+- **JSON Results**: `./reports/ui/playwright-test-results/results.json`
 
 **Reports include:**
 - Detailed test results with execution timelines
 - Failure analysis with screenshots and videos
 - Console logs and error traces
+- Trace files for debugging
 
-### Mocha Reports
+### Mocha UI Reports
 
-Mocha tests output real-time results using the Spec reporter, providing:
+Mocha UI tests are configured with dual reporters:
+
+**1. Spec Reporter (Console Output)**
+```bash
+npm run test:mocha:specreporter
+```
+Real-time console output showing:
 - Pass/fail status for each test with execution time
 - Detailed error messages and stack traces
 - Clean test organization by describe/it blocks
+
+**2. HTML Reporter (Mochawesome)**
+```bash
+npm run test:mocha
+```
+Interactive HTML reports with:
+- Test statistics and charts
+- Pass/fail details with stack traces
+- Console output captured per test
+- Code view for test methods
+- Automatic browser opening to view reports
+
+**Report Locations:**
+- **HTML Reports**: `./reports/ui/mocha-reports/`
+
+### API Reports
+
+API tests are configured with the same dual reporters as UI tests:
+
+**1. Spec Reporter (Console Output)**
+```bash
+npm run test:api
+```
+Real-time console output with detailed API test results.
+
+**2. HTML Reporter (Mochawesome)**
+Same as above, with API-specific details.
+
+**Report Locations:**
+- **HTML Reports**: `./reports/api/mocha-reports/`
+
+### Reporter Configuration
+
+The framework uses the following reporters configured in `.mocharc.json` files:
+
+- **Spec**: Built-in Mocha reporter for console output
+- **Mochawesome**: HTML reporter with interactive test visualization
+- **HTML**: Playwright native HTML reporter
+- **JSON**: Structured test results for CI/CD integration
+- **List**: Playwright list reporter for simple output
 
 ## 🚨 Troubleshooting
 
@@ -395,6 +509,12 @@ Mocha tests output real-time results using the Spec reporter, providing:
 **Issue**: Snapshot or selector issues after UI updates
 - **Solution**: Update locators in the corresponding Page Object classes
 - Prioritize `data-test` attributes over CSS selectors when possible
+
+**Issue**: Report files showing in Git status
+- **Solution**: All report directories are excluded in `.gitignore`. Run `git status` to verify. If reports still appear:
+  - Ensure `.gitignore` contains: `reports/`, `/test-results/`, `/playwright-report/`
+  - Run `git rm --cached reports/` and `git rm --cached test-results/` to remove from tracking
+  - Commit the changes: `git commit -m "Remove cached report files"`
 
 ## 🔧 Maintenance Guide
 
