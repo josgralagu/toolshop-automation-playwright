@@ -1,14 +1,12 @@
 {
   "require": [
-    "src/configs/mochaConfigs/setup.js",
-    "mochawesome/register"
-  ],
+	"api/configs/api.setup.js"
+	],
   "diff": true,
   "extension": ["js"],
   "reporter": ["spec", "mochawesome"],
   "timeout": 80000,
   "ui": "bdd",
   "retries": 2,
-  "parallel": true,
-  "jobs": 2
+  "parallel": false
 }

@@ -15,7 +15,8 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "../../tests/playwright-tests",
   /* Output folder for test artifacts */
-  outputDir: "../../../test-results",
+  outputDir: "../../../reports/ui/playwright-test-results",
+  /*"../../../test-results"*/
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -30,9 +31,9 @@ export default defineConfig({
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
-    ["html", { outputFolder: "../../../playwright-report" }],
+    ["html", { outputFolder: "../../../reports/ui/playwright-reports" }],
     ["list"],
-    ["json", { outputFile: "../../../test-results/results.json" }],
+    ["json", { outputFile: "../../../reports/ui/playwright-test-results/results.json" }],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {

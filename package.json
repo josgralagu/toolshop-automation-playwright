@@ -12,17 +12,17 @@
     "test:playwright:firefox": "npx playwright test --project=firefox --config=src/configs/playwrightConfigs/playwright.config.js",
     "test:playwright:msedge": "npx playwright test --project=msedge --config=src/configs/playwrightConfigs/playwright.config.js",
     "test:playwright:debug": "npx playwright test --debug --config=src/configs/playwrightConfigs/playwright.config.js",
-    "test:playwright:report": "npx playwright show-report",
-    "test:mocha": "npx mocha src/tests/mocha-chai-tests/**/*.spec.js --config src/configs/mochaConfigs/.mocharc.json",
-    "test:mocha:file": "npx mocha src/tests/mocha-chai-tests/example.spec.js --config src/configs/mochaConfigs/.mocharc.json",
+    "test:playwright:report": "npx playwright show-report reports/ui/playwright-reports",
+    "test:mocha": "npx mocha src/tests/mocha-chai-tests/**/*.spec.js --config src/configs/mochaConfigs/.mocharc.json --reporter-options reportDir=reports/ui/mocha-reports,reportFilename=toolshop-test-[status]_[datetime],overwrite=false,quiet=true,code=true,charts=true,autoOpen=true,showHooks=always",
+    "test:mocha:file": "npx mocha src/tests/mocha-chai-tests/example.spec.js --config src/configs/mochaConfigs/.mocharc.json --reporter-options reportDir=reports/ui/mocha-reports,reportFilename=single_spec-[status]_[datetime]-report,overwrite=false,quiet=true,code=true,charts=true,autoOpen=true,showHooks=always",
     "test:mocha:watch": "npx mocha src/tests/mocha-chai-tests/**/*.spec.js --watch --config src/configs/mochaConfigs/.mocharc.json",
-    "test:mocha:reporter": "npx mocha src/tests/mocha-chai-tests/**/*.spec.js --reporter spec --config src/configs/mochaConfigs/.mocharc.json",
-    "test:mocha:serial": "npx mocha src/tests/mocha-chai-tests/**/*.spec.js --parallel false --config src/configs/mochaConfigs/.mocharc.json",
-    "test:mocha:grep": "npx mocha src/tests/mocha-chai-tests/**/*.spec.js --grep --config src/configs/mochaConfigs/.mocharc.json",
+    "test:mocha:specreporter": "npx mocha src/tests/mocha-chai-tests/**/*.spec.js --reporter spec --config src/configs/mochaConfigs/.mocharc.json",
+    "test:mocha:serial": "npx mocha src/tests/mocha-chai-tests/**/*.spec.js --parallel false --config src/configs/mochaConfigs/.mocharc.json --reporter-options reportDir=reports/ui/mocha-reports,reportFilename=toolshop-test-[status]_[datetime],overwrite=false,quiet=true,code=true,charts=true,autoOpen=true,showHooks=always",
+    "test:mocha:grep": "npx mocha src/tests/mocha-chai-tests/**/*.spec.js --config src/configs/mochaConfigs/.mocharc.json --grep",
     "test:all": "npm run test:playwright && npm run test:mocha",
     "test:all:headed": "npm run test:playwright:headed && npm run test:mocha",
     "test:all:parallel": "npm run test:playwright & npm run test:mocha",
-    "test:api": "npx mocha src/api/tests/**/*.spec.js --config src/api/configs/.mocharc.json"
+    "test:api": "npx mocha api/tests/**/*.spec.js --config api/configs/.mocharc.json --reporter-options reportDir=reports/api/mocha-reports,reportFilename=api-test-[status]_[datetime],overwrite=false,quiet=true,code=true,charts=true,autoOpen=true,showHooks=always"
   },
   "keywords": [
     "playwright",
@@ -39,6 +39,7 @@
     "chai": "^6.2.1",
     "joi": "^18.0.2",
     "mocha": "^11.7.5",
+    "mochawesome": "^7.1.4",
     "playwright": "^1.56.1",
     "supertest": "^7.1.4"
   },
