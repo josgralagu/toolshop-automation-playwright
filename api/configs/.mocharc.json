@@ -1,12 +1,10 @@
 {
-  "require": [
-	"api/configs/api.setup.js"
-	],
-  "diff": true,
-  "extension": ["js"],
-  "reporter": ["spec", "mochawesome"],
-  "timeout": 80000,
-  "ui": "bdd",
-  "retries": 2,
-  "parallel": false
+	"require": ["api/configs/api.setup.js"],
+	"diff": true,
+	"extension": ["js"],
+	"reporter": ["spec", "mochawesome"],
+	"timeout": 80000,
+	"ui": "bdd",
+	"retries": 2,
+	"parallel": false
 }

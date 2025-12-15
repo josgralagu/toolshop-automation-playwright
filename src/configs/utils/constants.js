@@ -6,12 +6,12 @@
 // ====================================================================
 
 export const URLS = {
-  BASE: "https://practicesoftwaretesting.com",
-  MY_ACCOUNT: "/account",
-  PRODUCTS: "/products",
-  SIGN_UP: "/auth/register",
-  SIGN_IN: "/auth/login",
-  PROFILE: "/account/profile",
-  FAVORITES: "/account/favorites",
-  CART: "/checkout",
-};
+	BASE: "https://practicesoftwaretesting.com",
+	MY_ACCOUNT: "/account",
+	PRODUCTS: "/products",
+	SIGN_UP: "/auth/register",
+	SIGN_IN: "/auth/login",
+	PROFILE: "/account/profile",
+	FAVORITES: "/account/favorites",
+	CART: "/checkout"
+}

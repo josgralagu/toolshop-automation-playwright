@@ -33,13 +33,18 @@ export default defineConfig({
   reporter: [
     ["html", { outputFolder: "../../../reports/ui/playwright-reports" }],
     ["list"],
-    ["json", { outputFile: "../../../reports/ui/playwright-test-results/results.json" }],
+    [
+      "json",
+      {
+        outputFile: "../../../reports/ui/playwright-test-results/results.json",
+      },
+    ],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
     baseURL: "https://practicesoftwaretesting.com",
-    
+
     /* Screenshots only on failures */
     screenshot: "only-on-failure",
 

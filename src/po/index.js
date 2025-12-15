@@ -6,22 +6,24 @@
 // ====================================================================
 
 // Export pages factory function and individual page classes
-export { pages, 
-         BasePage, 
-         CartPage, 
-         ContactPage, 
-         FavoritesPage, 
-         MyAccountPage, 
-         ProductDetailPage, 
-         ProductsPage, 
-         ProfilePage, 
-         SignInPage, 
-         SignUpPage 
-} from './Pages/index.js';
+export {
+	pages,
+	BasePage,
+	CartPage,
+	ContactPage,
+	FavoritesPage,
+	MyAccountPage,
+	ProductDetailPage,
+	ProductsPage,
+	ProfilePage,
+	SignInPage,
+	SignUpPage
+} from "./Pages/index.js"
 
 // Export all components
-export { SearchComponent, 
-         FilterComponent, 
-         PaginationComponent, 
-         NavigationBarComponent 
-} from './Components/index.js';
+export {
+	SearchComponent,
+	FilterComponent,
+	PaginationComponent,
+	NavigationBarComponent
+} from "./Components/index.js"
