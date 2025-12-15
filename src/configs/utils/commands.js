@@ -6,9 +6,9 @@
 // Refactored to use improved Page Object Model structure
 // ====================================================================
 
-import { expect } from '@playwright/test';
-import { pages } from "../../po/index.js";
-import { languageMap } from './testData.js';
+import { expect } from "@playwright/test"
+import { pages } from "../../po/index.js"
+import { languageMap } from "./testData.js"
 
 // ==================== PROFILE ACTIONS SECTION ====================
 
@@ -20,12 +20,12 @@ import { languageMap } from './testData.js';
  * @param {string} phoneNumber - New phone number to set
  */
 export async function updateProfilePhoneNumber(page, phoneNumber) {
-      const myAccountPage = pages('myaccount', page);
-      const profilePage = pages('profile', page);
-  
-      // Navigate to profile and update phone number
-      await myAccountPage.accessToProfile();
-      await profilePage.updatePhoneNumber(phoneNumber);
+	const myAccountPage = pages("myaccount", page)
+	const profilePage = pages("profile", page)
+
+	// Navigate to profile and update phone number
+	await myAccountPage.accessToProfile()
+	await profilePage.updatePhoneNumber(phoneNumber)
 }
 
 // ==================== PRODUCT NAVIGATION & SEARCH SECTION ====================
@@ -35,9 +35,9 @@ export async function updateProfilePhoneNumber(page, phoneNumber) {
  * Primary entry point for product-related test scenarios
  */
 export async function navigateToProductsPage(page) {
-  const productsPage = pages('products', page);
-  await productsPage.navigateToProductsPage();
-  await productsPage.waitForInitialProductsLoad();
+	const productsPage = pages("products", page)
+	await productsPage.navigateToProductsPage()
+	await productsPage.waitForInitialProductsLoad()
 }
 
 /**
@@ -45,10 +45,10 @@ export async function navigateToProductsPage(page) {
  * Simplified workflow for quick product access
  */
 export async function goToProductDetail(page, productName) {
-  const productsPage = pages('products', page);
-  await productsPage.navigateToProductsPage();
-  await productsPage.waitForInitialProductsLoad();
-  await productsPage.searchAndSelectProduct(productName);
+	const productsPage = pages("products", page)
+	await productsPage.navigateToProductsPage()
+	await productsPage.waitForInitialProductsLoad()
+	await productsPage.searchAndSelectProduct(productName)
 }
 
 /**
@@ -56,8 +56,8 @@ export async function goToProductDetail(page, productName) {
  * Assumes user is already on products page
  */
 export async function searchAndSelectProduct(page, productName) {
-  const productsPage = pages('products', page);
-  await productsPage.searchAndSelectProduct(productName);
+	const productsPage = pages("products", page)
+	await productsPage.searchAndSelectProduct(productName)
 }
 
 // ==================== CART OPERATIONS SECTION ====================
@@ -67,13 +67,13 @@ export async function searchAndSelectProduct(page, productName) {
  * Includes navigation, search, product selection, and cart addition
  */
 export async function addProductToCart(page, productName, quantity = 1) {
-  const productsPage = pages('products', page);
-  const detailPage = pages('productdetail', page);
+	const productsPage = pages("products", page)
+	const detailPage = pages("productdetail", page)
 
-  await productsPage.navigateToProductsPage();
-  await productsPage.searchAndSelectProduct(productName);
-  await detailPage.waitForProductData();
-  await detailPage.addToCartByPlusClicks(quantity - 1);
+	await productsPage.navigateToProductsPage()
+	await productsPage.searchAndSelectProduct(productName)
+	await detailPage.waitForProductData()
+	await detailPage.addToCartByPlusClicks(quantity - 1)
 }
 
 /**
@@ -85,17 +85,21 @@ export async function addProductToCart(page, productName, quantity = 1) {
  * @param {number} qtyPerProduct - Quantity of each product to add
  * @returns {Array} Array of product objects with name, quantity, and price
  */
-export async function addProductsAndCollectData(page, productNames, qtyPerProduct) {
-  const detailPage = pages('productdetail', page);
-  const products = [];
+export async function addProductsAndCollectData(
+	page,
+	productNames,
+	qtyPerProduct
+) {
+	const detailPage = pages("productdetail", page)
+	const products = []
 
-  for (let i = 0; i < productNames.length; i++) {
-    const name = productNames[i];
-    await addProductToCart(page, name, qtyPerProduct);
-    const price = await detailPage.getProductPrice();
-    products.push({ name, qty: qtyPerProduct, price });
-  }
-  return products;
+	for (let i = 0; i < productNames.length; i++) {
+		const name = productNames[i]
+		await addProductToCart(page, name, qtyPerProduct)
+		const price = await detailPage.getProductPrice()
+		products.push({ name, qty: qtyPerProduct, price })
+	}
+	return products
 }
 
 /**
@@ -106,19 +110,19 @@ export async function addProductsAndCollectData(page, productNames, qtyPerProduc
  * @returns {Object} Cart data object with names, quantities, prices, line totals, and cart total
  */
 export async function getCartData(page) {
-  const detailPage = pages('productdetail', page);
-  const cartPage   = pages('cart', page);
+	const detailPage = pages("productdetail", page)
+	const cartPage = pages("cart", page)
 
-  await detailPage.goToCartViaHeaderLink();
-  await cartPage.waitForCartLoad();
+	await detailPage.goToCartViaHeaderLink()
+	await cartPage.waitForCartLoad()
 
-  return {
-    names:      await cartPage.getProductNames(),
-    quantities: await cartPage.getQuantities(),
-    prices:     await cartPage.getPrices(),
-    lineTotals: await cartPage.getLineTotals(),
-    cartTotal:  await cartPage.getCartTotal(),
-  };
+	return {
+		names: await cartPage.getProductNames(),
+		quantities: await cartPage.getQuantities(),
+		prices: await cartPage.getPrices(),
+		lineTotals: await cartPage.getLineTotals(),
+		cartTotal: await cartPage.getCartTotal()
+	}
 }
 
 // ==================== CART CALCULATIONS & VALIDATIONS SECTION ====================
@@ -131,7 +135,7 @@ export async function getCartData(page) {
  * @returns {number} Calculated subtotal
  */
 export function calculateExpectedSubtotal(products) {
-  return products.reduce((sum, p) => sum + p.price * p.qty, 0);
+	return products.reduce((sum, p) => sum + p.price * p.qty, 0)
 }
 
 /**
@@ -141,7 +145,7 @@ export function calculateExpectedSubtotal(products) {
  * @returns {string[]} Array of product names
  */
 export function getProductNames(products) {
-  return products.map(p => p.name);
+	return products.map((p) => p.name)
 }
 
 /**
@@ -151,7 +155,7 @@ export function getProductNames(products) {
  * @returns {number[]} Array of product quantities
  */
 export function getProductQuantities(products) {
-  return products.map(p => p.qty);
+	return products.map((p) => p.qty)
 }
 
 /**
@@ -161,7 +165,7 @@ export function getProductQuantities(products) {
  * @returns {number[]} Array of product prices
  */
 export function getProductPrices(products) {
-  return products.map(p => p.price);
+	return products.map((p) => p.price)
 }
 
 /**
@@ -173,15 +177,10 @@ export function getProductPrices(products) {
  * @returns {Array} Array of difference objects with index, actual, expected, and diff
  */
 export function getLineTotalsDifferences(cartLineTotals, products) {
-  return cartLineTotals.map((actual, i) => {
-    const expected = products[i].price * products[i].qty;
-    return {
-      index: i,
-      actual,
-      expected,
-      diff: Math.abs(actual - expected),
-    };
-  });
+	return cartLineTotals.map((actual, i) => {
+		const expected = products[i].price * products[i].qty
+		return { index: i, actual, expected, diff: Math.abs(actual - expected) }
+	})
 }
 
 /**
@@ -191,7 +190,7 @@ export function getLineTotalsDifferences(cartLineTotals, products) {
  * @returns {number} Total sum of all differences
  */
 export function sumLineTotalsDifferences(differences) {
-  return differences.reduce((sum, item) => sum + item.diff, 0);
+	return differences.reduce((sum, item) => sum + item.diff, 0)
 }
 
 /**
@@ -202,8 +201,8 @@ export function sumLineTotalsDifferences(differences) {
  * @returns {number} Total error across all line items
  */
 export function calculateLineTotalsError(cartLineTotals, products) {
-  const differences = getLineTotalsDifferences(cartLineTotals, products);
-  return sumLineTotalsDifferences(differences);
+	const differences = getLineTotalsDifferences(cartLineTotals, products)
+	return sumLineTotalsDifferences(differences)
 }
 
 // ==================== FILTER OPERATIONS SECTION ====================
@@ -213,19 +212,19 @@ export function calculateLineTotalsError(cartLineTotals, products) {
  * Supported categories: 'Hand Tools', 'Power Tools', 'Other'
  */
 export async function filterByCategory(page, categoryName) {
-  const basePage = pages('base', page);
-  await basePage.navigationBar.clickCategoriesLink();
+	const basePage = pages("base", page)
+	await basePage.navigationBar.clickCategoriesLink()
 
-  const categoryActions = {
-    "Hand Tools": () => basePage.navigationBar.clickHandToolsLink(),
-    "Power Tools": () => basePage.navigationBar.clickPowerToolsLink(),
-    Other: () => basePage.navigationBar.clickOtherLink(),
-  };
+	const categoryActions = {
+		"Hand Tools": () => basePage.navigationBar.clickHandToolsLink(),
+		"Power Tools": () => basePage.navigationBar.clickPowerToolsLink(),
+		Other: () => basePage.navigationBar.clickOtherLink()
+	}
 
-  const action = categoryActions[categoryName];
-  if (!action) throw new Error(`Category "${categoryName}" not supported`);
+	const action = categoryActions[categoryName]
+	if (!action) throw new Error(`Category "${categoryName}" not supported`)
 
-  await action();
+	await action()
 }
 
 /**
@@ -233,10 +232,10 @@ export async function filterByCategory(page, categoryName) {
  * Includes wait for complete filter cycle
  */
 export async function filterBySubcategory(page, subcategoryName) {
-  const productsPage = pages('products', page);
-  await productsPage.clickSubcategoryCheckbox(subcategoryName);
-  await productsPage.waitForFilterCycle();
-  await productsPage.waitForFilterResults();
+	const productsPage = pages("products", page)
+	await productsPage.clickSubcategoryCheckbox(subcategoryName)
+	await productsPage.waitForFilterCycle()
+	await productsPage.waitForFilterResults()
 }
 
 /**
@@ -244,10 +243,10 @@ export async function filterBySubcategory(page, subcategoryName) {
  * Useful for test cleanup between scenarios
  */
 export async function clearSubcategoryFilter(page, subcategoryName) {
-  const productsPage = pages('products', page);
-  await productsPage.clickSubcategoryCheckbox(subcategoryName);
-  await productsPage.waitForFilterCycle();
-  await productsPage.waitForInitialProductsLoad();
+	const productsPage = pages("products", page)
+	await productsPage.clickSubcategoryCheckbox(subcategoryName)
+	await productsPage.waitForFilterCycle()
+	await productsPage.waitForInitialProductsLoad()
 }
 
 /**
@@ -255,8 +254,8 @@ export async function clearSubcategoryFilter(page, subcategoryName) {
  * Includes filter cycle completion wait
  */
 export async function filterByBrand(page, brandName) {
-  const productsPage = pages('products', page);
-  await productsPage.selectBrandByName(brandName);
+	const productsPage = pages("products", page)
+	await productsPage.selectBrandByName(brandName)
 }
 
 /**
@@ -264,8 +263,8 @@ export async function filterByBrand(page, brandName) {
  * Useful for test cleanup between scenarios
  */
 export async function deselectBrand(page, brandName) {
-  const productsPage = pages('products', page);
-  await productsPage.deselectBrandByName(brandName);
+	const productsPage = pages("products", page)
+	await productsPage.deselectBrandByName(brandName)
 }
 
 /**
@@ -273,8 +272,8 @@ export async function deselectBrand(page, brandName) {
  * Filters products to show only eco-certified items
  */
 export async function filterByEcoFriendly(page) {
-  const productsPage = pages('products', page);
-  await productsPage.clickEcoFriendlyFilter();
+	const productsPage = pages("products", page)
+	await productsPage.clickEcoFriendlyFilter()
 }
 
 /**
@@ -282,8 +281,8 @@ export async function filterByEcoFriendly(page) {
  * Combines category and brand filtering
  */
 export async function applyMultipleFilters(page, category, brand) {
-  await filterByCategory(page, category);
-  await filterByBrand(page, brand);
+	await filterByCategory(page, category)
+	await filterByBrand(page, brand)
 }
 
 // ==================== FILTER VALIDATIONS SECTION ====================
@@ -293,60 +292,83 @@ export async function applyMultipleFilters(page, category, brand) {
  * Verifies category and brand filters produce expected results
  */
 export async function validateMultipleFiltersBasic(
-  page,
-  category,
-  brand,
-  keywords
+	page,
+	category,
+	brand,
+	keywords
 ) {
-  const productsPage = pages('products', page);
-  const errors = [];
+	const productsPage = pages("products", page)
+	const errors = []
 
-  await productsPage.waitForInitialProductsLoad();
+	await productsPage.waitForInitialProductsLoad()
 
-  const hasProducts = await productsPage.hasProductsVisible();
-  if (!hasProducts) {
-    errors.push(`No products visible for ${category} + ${brand}`);
-    return errors;
-  }
+	const hasProducts = await productsPage.hasProductsVisible()
+	if (!hasProducts) {
+		errors.push(`No products visible for ${category} + ${brand}`)
+		return errors
+	}
 
-  const firstProductName = await productsPage.productName.first().textContent();
+	const firstProductName = await productsPage.productName
+		.first()
+		.textContent()
 
-  // Use the provided keywords parameter instead of dynamic import
-  const productMatchesCategory = keywords.some((keyword) =>
-    firstProductName.toLowerCase().includes(keyword.toLowerCase())
-  );
+	// Use the provided keywords parameter instead of dynamic import
+	const productMatchesCategory = keywords.some((keyword) =>
+		firstProductName.toLowerCase().includes(keyword.toLowerCase())
+	)
 
-  if (!productMatchesCategory) {
-    errors.push(
-      `Product "${firstProductName}" does not match category "${category}" keywords: ${keywords.join(", ")}`
-    );
-  }
+	if (!productMatchesCategory) {
+		errors.push(
+			`Product "${firstProductName}" does not match category "${category}" keywords: ${keywords.join(", ")}`
+		)
+	}
 
-  return errors;
+	return errors
 }
 
 /**
  * Validate multiple filters and navigate to product details
  * Combines validation with navigation workflow
  */
-export async function validateMultipleFiltersAndNavigate(page, category, brand, keywords) {
-  const errors = await validateMultipleFiltersBasic(page, category, brand, keywords);
-  if (errors.length === 0) {
-    await page.click('a.card');
-    await page.waitForURL(/\/product\//, { timeout: 15000 });
-  }
-  return errors;
+export async function validateMultipleFiltersAndNavigate(
+	page,
+	category,
+	brand,
+	keywords
+) {
+	const errors = await validateMultipleFiltersBasic(
+		page,
+		category,
+		brand,
+		keywords
+	)
+	if (errors.length === 0) {
+		await page.click("a.card")
+		await page.waitForURL(/\/product\//, { timeout: 15000 })
+	}
+	return errors
 }
 
 /**
  * Validate and navigate to product details with category-specific keywords
  * Wrapper function for category-specific validation workflows
  */
-export async function validateAndNavigateToProductDetails(page, category, brand, categoryKeywords) {
-  const categoryKey = category.charAt(0).toLowerCase() + category.slice(1).replace(/\s+/g, '');
-  const keywords = categoryKeywords[categoryKey];
-  const errors = await validateMultipleFiltersAndNavigate(page, category, brand, keywords);
-  return errors;
+export async function validateAndNavigateToProductDetails(
+	page,
+	category,
+	brand,
+	categoryKeywords
+) {
+	const categoryKey =
+		category.charAt(0).toLowerCase() + category.slice(1).replace(/\s+/g, "")
+	const keywords = categoryKeywords[categoryKey]
+	const errors = await validateMultipleFiltersAndNavigate(
+		page,
+		category,
+		brand,
+		keywords
+	)
+	return errors
 }
 
 /**
@@ -354,10 +376,10 @@ export async function validateAndNavigateToProductDetails(page, category, brand,
  * Validates product data availability and brand information
  */
 export async function verifyProductDetails(page) {
-  const detailPage = pages('productdetail', page);
-  await detailPage.waitForProductData();
-  const actualBrand = await detailPage.getBrandBadgeText();
-  return actualBrand.trim();
+	const detailPage = pages("productdetail", page)
+	await detailPage.waitForProductData()
+	const actualBrand = await detailPage.getBrandBadgeText()
+	return actualBrand.trim()
 }
 
 // ==================== PAGINATION VALIDATIONS SECTION ====================
@@ -369,70 +391,75 @@ export async function verifyProductDetails(page) {
  * @param {number} maxPages - Safety limit to prevent infinite loops
  */
 export async function validateAcrossPagination(
-  page,
-  validatePageFn,
-  maxPages = 10
+	page,
+	validatePageFn,
+	maxPages = 10
 ) {
-  const productsPage = pages('products', page);
-  const allErrors = [];
-  let currentPage = 1;
+	const productsPage = pages("products", page)
+	const allErrors = []
+	let currentPage = 1
 
-  while (currentPage <= maxPages) {
-    await productsPage.waitForInitialProductsLoad();
+	while (currentPage <= maxPages) {
+		await productsPage.waitForInitialProductsLoad()
 
-    const pageErrors = await validatePageFn(productsPage);
-    allErrors.push(...pageErrors);
+		const pageErrors = await validatePageFn(productsPage)
+		allErrors.push(...pageErrors)
 
-    const hasNextPage = await productsPage.hasNextPage();
-    if (!hasNextPage) break;
+		const hasNextPage = await productsPage.hasNextPage()
+		if (!hasNextPage) break
 
-    await productsPage.clickNextPage();
-    currentPage++;
-  }
+		await productsPage.clickNextPage()
+		currentPage++
+	}
 
-  if (currentPage >= maxPages) {
-    allErrors.push(
-      `Reached maximum page limit (${maxPages}) - possible infinite loop`
-    );
-  }
+	if (currentPage >= maxPages) {
+		allErrors.push(
+			`Reached maximum page limit (${maxPages}) - possible infinite loop`
+		)
+	}
 
-  return allErrors;
+	return allErrors
 }
 
 /**
  * Validate no out-of-stock products across all pagination pages
  * Comprehensive stock availability check for filtered results
  */
+// eslint-disable-next-line require-await
 export async function validateNoOutOfStockAcrossPagination(page) {
-  return validateAcrossPagination(page, async (productsPage) => {
-    const hasOutOfStock = await productsPage.hasOutOfStockProducts();
-    if (hasOutOfStock) {
-      return ["Found out-of-stock products on current page"];
-    }
-    return [];
-  });
+	return validateAcrossPagination(page, async (productsPage) => {
+		const hasOutOfStock = await productsPage.hasOutOfStockProducts()
+		if (hasOutOfStock) {
+			return ["Found out-of-stock products on current page"]
+		}
+		return []
+	})
 }
 
 /**
  * Validate product names contain expected keywords across pagination
  * Ensures filtered results match category or subcategory criteria
  */
+// eslint-disable-next-line require-await
 export async function validateKeywordsAcrossPagination(page, keywords) {
-  return validateAcrossPagination(page, async (productsPage) => {
-    const invalidNames = await productsPage.getInvalidProductNames(keywords);
-    if (invalidNames.length > 0) {
-      return [`Found products without keywords: ${invalidNames.join(", ")}`];
-    }
-    return [];
-  });
+	return validateAcrossPagination(page, async (productsPage) => {
+		const invalidNames = await productsPage.getInvalidProductNames(keywords)
+		if (invalidNames.length > 0) {
+			return [
+				`Found products without keywords: ${invalidNames.join(", ")}`
+			]
+		}
+		return []
+	})
 }
 
 /**
  * Validate category keyword matching across pagination
  * Wrapper function for category-specific keyword validation
  */
+// eslint-disable-next-line require-await
 export async function validateCategoryKeywords(page, keywords) {
-  return validateKeywordsAcrossPagination(page, keywords);
+	return validateKeywordsAcrossPagination(page, keywords)
 }
 
 /**
@@ -440,19 +467,19 @@ export async function validateCategoryKeywords(page, keywords) {
  * Checks product availability and stock status for brand filters
  */
 export async function validateBrandProducts(page, brandName) {
-  const productsPage = pages('products', page);
-  const errors = [];
+	const productsPage = pages("products", page)
+	const errors = []
 
-  const productCount = await productsPage.getCurrentPageProductCount();
-  if (productCount === 0) {
-    errors.push(`No products found for brand "${brandName}"`);
-    return errors;
-  }
+	const productCount = await productsPage.getCurrentPageProductCount()
+	if (productCount === 0) {
+		errors.push(`No products found for brand "${brandName}"`)
+		return errors
+	}
 
-  const outOfStockErrors = await validateNoOutOfStockAcrossPagination(page);
-  errors.push(...outOfStockErrors);
+	const outOfStockErrors = await validateNoOutOfStockAcrossPagination(page)
+	errors.push(...outOfStockErrors)
 
-  return errors;
+	return errors
 }
 
 /**
@@ -460,41 +487,45 @@ export async function validateBrandProducts(page, brandName) {
  * Handles both successful results and no-results scenarios
  */
 export async function validateSubcategoryResults(
-  page,
-  subcategoryName,
-  keywords
+	page,
+	subcategoryName,
+	keywords
 ) {
-  const productsPage = pages('products', page);
-  const errors = [];
+	const productsPage = pages("products", page)
+	const errors = []
 
-  const hasProducts = await productsPage.hasProductsVisible();
+	const hasProducts = await productsPage.hasProductsVisible()
 
-  if (!hasProducts) {
-    const noResultsVisible = await productsPage.filterComponent.hasNoResults();
-    if (!noResultsVisible) {
-      errors.push(`No products found for subcategory "${subcategoryName}" but no "no results" message visible`);
-    }
-    return errors;
-  }
+	if (!hasProducts) {
+		const noResultsVisible =
+			await productsPage.filterComponent.hasNoResults()
+		if (!noResultsVisible) {
+			errors.push(
+				`No products found for subcategory "${subcategoryName}" but no "no results" message visible`
+			)
+		}
+		return errors
+	}
 
-  const keywordErrors = await validateKeywordsAcrossPagination(page, keywords);
-  errors.push(...keywordErrors);
+	const keywordErrors = await validateKeywordsAcrossPagination(page, keywords)
+	errors.push(...keywordErrors)
 
-  return errors;
+	return errors
 }
 
 /**
  * Validate eco-friendly badge presence across all pagination pages
  * Ensures eco filter shows only certified products
  */
+// eslint-disable-next-line require-await
 export async function validateEcoBadgesAcrossPagination(page) {
-  return validateAcrossPagination(page, async (productsPage) => {
-    const allEco = await productsPage.validateCurrentPageEcoBadges();
-    if (!allEco) {
-      return ["Not all products have ECO badge"];
-    }
-    return [];
-  });
+	return validateAcrossPagination(page, async (productsPage) => {
+		const allEco = await productsPage.validateCurrentPageEcoBadges()
+		if (!allEco) {
+			return ["Not all products have ECO badge"]
+		}
+		return []
+	})
 }
 
 // ==================== LANGUAGE & CONTACT ACTIONS SECTION ====================
@@ -504,8 +535,8 @@ export async function validateEcoBadgesAcrossPagination(page) {
  * @param {string} languageCode - Two-letter language code (DE, EN, ES, FR, NL, TR)
  */
 export async function changeLanguage(page, languageCode) {
-  const basePage = pages('base', page);
-  await basePage.navigationBar.changeLanguage(languageCode);
+	const basePage = pages("base", page)
+	await basePage.navigationBar.changeLanguage(languageCode)
 }
 
 /**
@@ -517,9 +548,9 @@ export async function changeLanguage(page, languageCode) {
  * @returns {Object} Translation object for the specified language
  */
 export async function changeLanguageAndGetTranslations(page, langCode) {
-  const contactPage = pages('contact', page);
-  await contactPage.navigationBar.changeLanguage(langCode);
-  return languageMap.contactTranslations[langCode];
+	const contactPage = pages("contact", page)
+	await contactPage.navigationBar.changeLanguage(langCode)
+	return languageMap.contactTranslations[langCode]
 }
 
 // ==================== CONTACT FORM VALIDATIONS SECTION ====================
@@ -529,54 +560,56 @@ export async function changeLanguageAndGetTranslations(page, langCode) {
  * Comprehensive check of all form field labels against expected translations
  */
 export async function validateContactFormLabels(page, translations) {
-  const contactPage = pages('contact', page);
-  const errors = [];
+	const contactPage = pages("contact", page)
+	const errors = []
 
-  const labelChecks = [
-    {
-      key: "firstName",
-      locator: contactPage.firstNameLabel,
-      expected: translations.firstNameField,
-    },
-    {
-      key: "lastName",
-      locator: contactPage.lastNameLabel,
-      expected: translations.lastNameField,
-    },
-    {
-      key: "email",
-      locator: contactPage.emailLabel,
-      expected: translations.emailField,
-    },
-    {
-      key: "subject",
-      locator: contactPage.subjectLabel,
-      expected: translations.subjectField,
-    },
-    {
-      key: "message",
-      locator: contactPage.messageLabel,
-      expected: translations.messageField,
-    },
-    {
-      key: "attachment",
-      locator: contactPage.attachmentLabel,
-      expected: translations.attachmentLabel,
-    },
-  ];
+	const labelChecks = [
+		{
+			key: "firstName",
+			locator: contactPage.firstNameLabel,
+			expected: translations.firstNameField
+		},
+		{
+			key: "lastName",
+			locator: contactPage.lastNameLabel,
+			expected: translations.lastNameField
+		},
+		{
+			key: "email",
+			locator: contactPage.emailLabel,
+			expected: translations.emailField
+		},
+		{
+			key: "subject",
+			locator: contactPage.subjectLabel,
+			expected: translations.subjectField
+		},
+		{
+			key: "message",
+			locator: contactPage.messageLabel,
+			expected: translations.messageField
+		},
+		{
+			key: "attachment",
+			locator: contactPage.attachmentLabel,
+			expected: translations.attachmentLabel
+		}
+	]
 
-  for (const { key, locator, expected } of labelChecks) {
-    try {
-      const actual = await locator.textContent();
-      if (actual.trim() !== expected) {
-        errors.push(`Label ${key}: expected "${expected}", got "${actual}"`);
-      }
-    } catch (e) {
-      errors.push(`Label ${key}: element not found`);
-    }
-  }
+	for (const { key, locator, expected } of labelChecks) {
+		try {
+			const actual = await locator.textContent()
+			if (actual.trim() !== expected) {
+				errors.push(
+					`Label ${key}: expected "${expected}", got "${actual}"`
+				)
+			}
+		} catch {
+			errors.push(`Label ${key}: element not found`)
+		}
+	}
 
-  return errors; // Array vacío si todo OK
+	return errors
 }
 
 /**
@@ -584,52 +617,54 @@ export async function validateContactFormLabels(page, translations) {
  * Checks both input placeholders and select option text
  */
 export async function validateContactFormPlaceholders(page, translations) {
-  const errors = [];
+	const errors = []
 
-  // Input field placeholders validation
-  const inputPlaceholders = [
-    {
-      selector: '[data-test="first-name"]',
-      expected: translations.firstNamePlaceholder,
-    },
-    {
-      selector: '[data-test="last-name"]',
-      expected: translations.lastNamePlaceholder,
-    },
-    {
-      selector: '[data-test="email"]',
-      expected: translations.emailPlaceholder,
-    },
-  ];
+	// Input field placeholders validation
+	const inputPlaceholders = [
+		{
+			selector: '[data-test="first-name"]',
+			expected: translations.firstNamePlaceholder
+		},
+		{
+			selector: '[data-test="last-name"]',
+			expected: translations.lastNamePlaceholder
+		},
+		{
+			selector: '[data-test="email"]',
+			expected: translations.emailPlaceholder
+		}
+	]
 
-  for (const { selector, expected } of inputPlaceholders) {
-    try {
-      const actual = await page.locator(selector).getAttribute("placeholder");
-      if ((actual || "").trim() !== expected) {
-        errors.push(
-          `Input placeholder ${selector}: expected "${expected}", got "${actual}"`
-        );
-      }
-    } catch (e) {
-      errors.push(`Input placeholder ${selector}: element not found`);
-    }
-  }
+	for (const { selector, expected } of inputPlaceholders) {
+		try {
+			const actual = await page
+				.locator(selector)
+				.getAttribute("placeholder")
+			if ((actual || "").trim() !== expected) {
+				errors.push(
+					`Input placeholder ${selector}: expected "${expected}", got "${actual}"`
+				)
+			}
+		} catch {
+			errors.push(`Input placeholder ${selector}: element not found`)
+		}
+	}
 
-  // Select dropdown placeholder validation
-  try {
-    const selectedOption = await page
-      .locator('[data-test="subject"] option[selected]')
-      .textContent();
-    if ((selectedOption || "").trim() !== translations.subjectPlaceholder) {
-      errors.push(
-        `Select placeholder: expected "${translations.subjectPlaceholder}", got "${selectedOption}"`
-      );
-    }
-  } catch (e) {
-    errors.push(`Select placeholder: element not found`);
-  }
+	// Select dropdown placeholder validation
+	try {
+		const selectedOption = await page
+			.locator('[data-test="subject"] option[selected]')
+			.textContent()
+		if ((selectedOption || "").trim() !== translations.subjectPlaceholder) {
+			errors.push(
+				`Select placeholder: expected "${translations.subjectPlaceholder}", got "${selectedOption}"`
+			)
+		}
+	} catch {
+		errors.push(`Select placeholder: element not found`)
+	}
 
-  return errors;
+	return errors
 }
 
 /**
@@ -637,21 +672,21 @@ export async function validateContactFormPlaceholders(page, translations) {
  * Checks button value attribute against expected translation
  */
 export async function validateContactSubmitButton(page, translations) {
-  const contactPage = pages('contact', page);
-  const errors = [];
+	const contactPage = pages("contact", page)
+	const errors = []
 
-  try {
-    const actualValue = await contactPage.submitButton.getAttribute("value");
-    if (actualValue !== translations.submitButton) {
-      errors.push(
-        `Submit button: expected "${translations.submitButton}", got "${actualValue}"`
-      );
-    }
-  } catch (e) {
-    errors.push(`Submit button: element not found`);
-  }
+	try {
+		const actualValue = await contactPage.submitButton.getAttribute("value")
+		if (actualValue !== translations.submitButton) {
+			errors.push(
+				`Submit button: expected "${translations.submitButton}", got "${actualValue}"`
+			)
+		}
+	} catch {
+		errors.push(`Submit button: element not found`)
+	}
 
-  return errors;
+	return errors
 }
 
 /**
@@ -662,12 +697,20 @@ export async function validateContactSubmitButton(page, translations) {
  * @param {Object} translations - Translation object with navigation text
  */
 export async function validateNavigationElements(page, translations) {
-  const contactPage = pages('contact', page);
-  await expect(contactPage.mainHeading).toHaveText(translations.mainHeading);
-  await expect(contactPage.navigationBar.homeLink).toHaveText(translations.homeLink);
-  await expect(contactPage.navigationBar.categoriesLink).toHaveText(translations.categoriesLink);
-  await expect(contactPage.navigationBar.contactLink).toHaveText(translations.contactLink);
-  await expect(contactPage.navigationBar.signInLink).toHaveText(translations.signInLink);
+	const contactPage = pages("contact", page)
+	await expect(contactPage.mainHeading).toHaveText(translations.mainHeading)
+	await expect(contactPage.navigationBar.homeLink).toHaveText(
+		translations.homeLink
+	)
+	await expect(contactPage.navigationBar.categoriesLink).toHaveText(
+		translations.categoriesLink
+	)
+	await expect(contactPage.navigationBar.contactLink).toHaveText(
+		translations.contactLink
+	)
+	await expect(contactPage.navigationBar.signInLink).toHaveText(
+		translations.signInLink
+	)
 }
 
 /**
@@ -678,10 +721,14 @@ export async function validateNavigationElements(page, translations) {
  * @param {Object} translations - Translation object with warning and info text
  */
 export async function validateLabelsAndText(page, translations) {
-  const contactPage = pages('contact', page);
-  await expect(contactPage.warningLabel).toContainText(translations.warningLabel.substring(0, 30));
-  const infoText = await contactPage.getNormalizedInfoText();
-  expect(infoText).toContain(translations.infoLabel.substring(0, 60).replace(/\s+/g, ' ').trim());
+	const contactPage = pages("contact", page)
+	await expect(contactPage.warningLabel).toContainText(
+		translations.warningLabel.substring(0, 30)
+	)
+	const infoText = await contactPage.getNormalizedInfoText()
+	expect(infoText).toContain(
+		translations.infoLabel.substring(0, 60).replace(/\s+/g, " ").trim()
+	)
 }
 
 /**
@@ -693,8 +740,11 @@ export async function validateLabelsAndText(page, translations) {
  * @returns {Array} Combined array of all translation validation errors
  */
 export async function validateFormTranslations(page, translations) {
-  const labelErrors = await validateContactFormLabels(page, translations);
-  const placeholderErrors = await validateContactFormPlaceholders(page, translations);
-  const buttonErrors = await validateContactSubmitButton(page, translations);
-  return [...labelErrors, ...placeholderErrors, ...buttonErrors];
+	const labelErrors = await validateContactFormLabels(page, translations)
+	const placeholderErrors = await validateContactFormPlaceholders(
+		page,
+		translations
+	)
+	const buttonErrors = await validateContactSubmitButton(page, translations)
+	return [...labelErrors, ...placeholderErrors, ...buttonErrors]
 }

@@ -1,0 +1,7 @@
+# Ignore artifacts:
+package.json
+packaga-lock.json
+eslint.config.js
+node_modules/ 
+reports/ 
+**.md
