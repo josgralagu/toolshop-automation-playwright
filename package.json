@@ -53,10 +53,11 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@cucumber/cucumber": "^12.5.0",
     "@eslint/js": "9.39.1",
     "@eslint/json": "0.14.0",
     "@playwright/test": "1.56.1",
-    "@types/node": "24.10.0",
+    "@types/node": "^20.19.30",
     "chai": "6.2.1",
     "eslint": "9.39.1",
     "eslint-plugin-import": "2.32.0",
@@ -67,7 +68,10 @@
     "mochawesome": "7.1.4",
     "playwright": "1.56.1",
     "prettier": "3.7.4",
-    "supertest": "7.1.4"
+    "supertest": "7.1.4",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "should": "^13.2.3"

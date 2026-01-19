@@ -1,0 +1,62 @@
+{
+  "compilerOptions": {
+    // ES MODULE CONFIGURATION
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    
+    // INTEROPERABILIryTY OPTIONS
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    
+    // PATHS Y ALIASES
+    "baseUrl": "./",
+    "paths": {
+      "@pages/*": ["src/po/Pages/*"],
+      "@components/*": ["src/po/Components/*"],
+      "@utils/*": ["src/configs/utils/*"],
+      "@support/*": ["src/support/*"],
+      "@features/*": ["src/features/*"],
+      "@steps/*": ["src/steps/*"]
+    },
+
+    // TYPES
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    
+    // STRICT OPTIONS
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    // MIGRATION (SUPPORTS JS LEGACY)
+    "allowJs": true,
+    "checkJs": false,
+    
+    // OUTPUT
+    "outDir": "./dist",
+    "sourceMap": true,
+    "declaration": false,
+    "declarationMap": false,
+
+    // ADDITIONAL OPTIONS
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  },
+  
+  "include": [
+    "src/**/*",
+    "src/types/**/*.d.ts",
+    "playwright.config.ts",
+    "cucumber.config.cjs"
+  ],
+  
+  "exclude": [
+    "node_modules",
+    "dist",
+    "reports",
+    "**/*.spec.js"
+  ]
+}
