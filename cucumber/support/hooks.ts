@@ -51,9 +51,12 @@ Before(async function (
 	// Select browser type
 	const browserType = browserName === 'firefox' ? firefox : chromium
 
+	// Use headless mode in CI (Linux without display)
+	const isCI = process.env.CI === 'true'
+
 	this.browser = await browserType.launch({
-		headless: false,
-		args: ["--start-maximized"]
+		headless: isCI ? true : false,
+		args: isCI ? [] : ["--start-maximized"]
 	})
 
 	this.context = await this.browser.newContext({
