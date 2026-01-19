@@ -68,7 +68,7 @@ export default defineConfig([
   { 
 	  name: "json rules config",
     files: ["**/*.json"],
-    ignores: ["package-lock.json", "package.json"],
+    ignores: ["package-lock.json", "package.json", "tsconfig.json"],
     plugins: { json },
     language: "json/json",
     extends: ["json/recommended"],
