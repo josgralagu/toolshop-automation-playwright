@@ -8,7 +8,7 @@ import {
 	ITestCaseHookParameter,
 	setDefaultTimeout
 } from "@cucumber/cucumber"
-import { chromium } from "playwright"
+import { chromium, firefox } from "playwright"
 import * as fs from "fs"
 import * as path from "path"
 import { ToolshopWorld } from "./world"
@@ -36,14 +36,21 @@ Before(async function (
 	this: ToolshopWorld,
 	{ pickle }: ITestCaseHookParameter
 ) {
+	// Get browser from worldParameters (default to chromium)
+	const browserName = this.parameters.browser || 'chromium'
+
 	console.log("\n" + "=".repeat(80))
 	console.log(`🚀 Starting: ${pickle.name}`)
 	console.log(`📂 Feature: ${pickle.uri}`)
 	console.log(`🏷️  Tags: ${pickle.tags.map((t) => t.name).join(", ")}`)
+	console.log(`🌐 Browser: ${browserName}`)
 	console.log("=".repeat(80))
 
-	this.browser = await chromium.launch({
-		headless: this.parameters.headless ?? true,
+	// Select browser type
+	const browserType = browserName === 'firefox' ? firefox : chromium
+
+	this.browser = await browserType.launch({
+		headless: false,
 		args: ["--start-maximized"]
 	})
 
@@ -61,7 +68,8 @@ Before(async function (
 		scenarioName: pickle.name,
 		scenarioUri: pickle.uri,
 		startTime: Date.now(),
-		tags: pickle.tags.map((tag) => tag.name)
+		tags: pickle.tags.map((tag) => tag.name),
+		browser: browserName
 	}
 
 	console.log("✅ Browser, context, and page initialized")

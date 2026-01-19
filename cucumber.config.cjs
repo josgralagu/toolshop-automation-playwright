@@ -40,6 +40,6 @@ module.exports = {
   worldParameters: {
     baseUrl: 'https://practicesoftwaretesting.com',
     timeout: 60000,
-    headless: true
+    headless: false
   }
 };
