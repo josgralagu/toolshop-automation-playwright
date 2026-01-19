@@ -50,6 +50,7 @@
     "src/**/*",
     "src/types/**/*.d.ts",
     "playwright.config.ts",
+    "cucumber.js",
     "cucumber.config.cjs"
   ],
   
