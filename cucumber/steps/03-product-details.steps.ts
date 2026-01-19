@@ -2,7 +2,7 @@
 import { Given, When, Then } from '@cucumber/cucumber'
 import { expect } from '@playwright/test'
 import type { CustomWorld } from '../support/world'
-import { pages } from '../po/index'
+import { pages } from '../../src/po/index'
 
 // ========== GIVEN STEPS ==========
 Given('there are products available in the store', async function(this: CustomWorld) {

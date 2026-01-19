@@ -2,9 +2,9 @@
 import { Given, When, Then } from '@cucumber/cucumber'
 import { expect } from '@playwright/test'
 import type { CustomWorld } from '../support/world'
-import { pages } from '../po/index'
-import { authenticateNewUser } from '../configs/utils/auth-helper'
-import { searchProducts } from '../configs/utils/testData'
+import { pages } from '../../src/po/index'
+import { authenticateNewUser } from '../../src/configs/utils/auth-helper'
+import { searchProducts } from '../../src/configs/utils/testData'
 
 // ========== GIVEN STEPS ==========
 Given('the user has at least one product in his favorites list',

@@ -2,7 +2,7 @@
 import { Given, When, Then } from '@cucumber/cucumber'
 import { expect } from '@playwright/test'
 import type { CustomWorld } from '../support/world'
-import { pages } from '../po/index'
+import { pages } from '../../src/po/index'
 import {
     filterByCategory,
     filterByBrand,
@@ -10,8 +10,8 @@ import {
     validateCategoryKeywords,
     validateBrandProducts,
     validateEcoBadgesAcrossPagination
-} from '../configs/utils/commands'
-import { categoryKeywords } from '../configs/utils/testData'
+} from '../../src/configs/utils/commands'
+import { categoryKeywords } from '../../src/configs/utils/testData'
 
 // ========== GIVEN STEPS ==========
 Given('the user is on the products page', async function(this: CustomWorld) {
