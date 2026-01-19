@@ -14,6 +14,8 @@ Feature: Language Selection
     Then the contact page title is displayed in "<language>"
     And the form labels are translated to "<language>"
     And the submit button text is in "<language>"
+    And the navigation elements are translated to "<language>"
+    And the page labels and text are in "<language>"
     And the selected language is "<language>"
 
     Examples:

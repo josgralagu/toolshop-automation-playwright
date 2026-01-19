@@ -20,8 +20,10 @@ BeforeAll(async function () {
 
 	const reportDirs = [
 		"reports/cucumber",
-		"reports/cucumber/screenshots",
-		"reports/cucumber/videos"
+		"reports/cucumber/chrome",
+		"reports/cucumber/firefox",
+		"reports/cucumber/chrome/screenshots",
+		"reports/cucumber/firefox/screenshots"
 	]
 
 	reportDirs.forEach((dir) => {
@@ -88,8 +90,10 @@ After(async function (
 	if (isFailed && this.page) {
 		const timestamp = new Date().toISOString().replace(/[:.]/g, "-")
 		const scenarioNameSafe = pickle.name.replace(/[^a-zA-Z0-9]/g, "_")
+		const browserName = this.testData.browser || "chromium"
+		const screenshotDir = browserName === "firefox" ? "reports/cucumber/firefox/screenshots" : "reports/cucumber/chrome/screenshots"
 		const screenshotPath = path.join(
-			"reports/cucumber/screenshots",
+			screenshotDir,
 			`${scenarioNameSafe}_${timestamp}.png`
 		)
 

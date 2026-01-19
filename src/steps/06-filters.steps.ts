@@ -55,7 +55,7 @@ When('the user selects the {string}', async function(this: CustomWorld, category
 // ========== THEN STEPS ==========
 Then('the user sees only products from the {string} category',
     async function(this: CustomWorld, category: string) {
-        const categoryKey = category.toLowerCase().replace(/\s+/g, '')
+        const categoryKey = category.charAt(0).toLowerCase() + category.slice(1).replace(/\s+/g, '')
         const keywords = categoryKeywords[categoryKey as keyof typeof categoryKeywords]
 
         const errors = await validateCategoryKeywords(this.page!, keywords)

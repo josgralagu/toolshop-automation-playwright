@@ -66,3 +66,19 @@ Then('the selected language is {string}', async function(this: CustomWorld, lang
     expect(currentLang.toUpperCase()).toContain(language)
     console.log(`✅ Selected language is: ${language}`)
 })
+
+Then('the navigation elements are translated to {string}',
+    async function(this: CustomWorld, language: string) {
+        const translations = this.testData.translations
+        await validateNavigationElements(this.page!, translations)
+        console.log(`✅ Navigation elements translated to ${language}`)
+    }
+)
+
+Then('the page labels and text are in {string}',
+    async function(this: CustomWorld, language: string) {
+        const translations = this.testData.translations
+        await validateLabelsAndText(this.page!, translations)
+        console.log(`✅ Page labels and text are in ${language}`)
+    }
+)
