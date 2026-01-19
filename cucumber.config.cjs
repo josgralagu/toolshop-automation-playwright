@@ -2,12 +2,15 @@ const path = require('path');
 
 module.exports = {
   // ========== ESMODULES ==========
-  //requireModule: ['ts-node/esm'],
-  //requireModule: ['tsx'], // Usa tsx para cargar .ts con ES Modules
+  requireModule: ['tsx/cjs'],
   require: [
     'src/support/world-setup.ts',
     'src/support/hooks.ts',
-    'src/steps/**/*.ts'
+    'src/steps/02-user-profile.steps.ts',
+    'src/steps/03-product-details.steps.ts',
+    'src/steps/05-favorites.steps.ts',
+    'src/steps/06-filters.steps.ts',
+    'src/steps/11-language.steps.ts'
   ],
   
   // ========== FEATURES ==========

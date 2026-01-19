@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npx cucumber-js:*)",
+      "Bash(npm run test:cucumber:profile:*)",
+      "Bash(npm run test:cucumber:smoke:*)",
+      "Bash(npm run test:cucumber:*)"
+    ]
+  }
+}

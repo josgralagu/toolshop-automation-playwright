@@ -1,6 +1,6 @@
 import type { Page } from 'playwright'
-import { pages } from '../../po/index.js'
-import { generateValidUser } from './testData.js'
+import { pages } from '../../po/index'
+import { generateValidUser } from './testData'
 
 /**
  * Authenticates a new user in the application

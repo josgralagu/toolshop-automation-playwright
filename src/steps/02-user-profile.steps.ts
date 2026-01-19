@@ -1,9 +1,9 @@
 import { Given, When, Then } from '@cucumber/cucumber'
 import { expect } from '@playwright/test'
-import type { CustomWorld } from '../support/world.js'
-import { pages } from '../po/index.js'
-import { authenticateNewUser, navigateToProfile } from '../configs/utils/auth-helper.js'
-import { validProfileUpdate, invalidProfileUpdate } from '../configs/utils/testData.js'
+import type { CustomWorld } from '../support/world'
+import { pages } from '../po/index'
+import { authenticateNewUser, navigateToProfile } from '../configs/utils/auth-helper'
+import { validProfileUpdate, invalidProfileUpdate } from '../configs/utils/testData'
 
 // ========== BACKGROUND ==========
 Given('the user has logged into his account', async function(this: CustomWorld) {
