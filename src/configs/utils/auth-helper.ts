@@ -11,21 +11,23 @@ export async function authenticateNewUser (page: Page) {
     const signUpPage = pages("signup", page)
     const signInPage = pages("signin", page)
     const myAccountPage = pages("myaccount", page)
-    
+
     //Generates an unique user
     const user = generateValidUser()
     console.log(`🆕 Creating test user: ${user.email}`)
-    
+
     //Registration
     await signUpPage.navigateToSignUp()
+    await page.waitForLoadState('domcontentloaded')
     await signUpPage.completeRegistration(user)
 
     //Login
     await signInPage.logIn(user.email, user.password)
+    await page.waitForLoadState('domcontentloaded')
     await myAccountPage.waitForUserNameVisible()
 
     console.log(`✅ User authenticated: ${user.email}`)
-    
+
     return {
         page,
         user
@@ -37,6 +39,8 @@ export async function authenticateNewUser (page: Page) {
      */
     export async function navigateToProfile(page: Page) {
         const myAccountPage = pages("myaccount", page)
+        await page.waitForLoadState('domcontentloaded')
         await myAccountPage.accessToProfile()
+        await page.waitForLoadState('domcontentloaded')
         console.log(`✅ Navigated to profile page`)
     }
