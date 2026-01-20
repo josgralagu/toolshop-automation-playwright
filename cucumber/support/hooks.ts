@@ -13,7 +13,9 @@ import * as fs from "fs"
 import * as path from "path"
 import { ToolshopWorld } from "./world"
 
-setDefaultTimeout(60000)
+// Use higher timeout in CI environment
+const isCI = !!process.env.CI
+setDefaultTimeout(isCI ? 300000 : 60000)
 
 BeforeAll(async function () {
 	console.log("🎬 Starting Cucumber Test Suite")
@@ -52,8 +54,8 @@ Before(async function (
 	const browserType = browserName === 'firefox' ? firefox : chromium
 
 	this.browser = await browserType.launch({
-		headless: false,
-		args: ["--start-maximized"]
+		headless: isCI ? true : false,
+		args: isCI ? [] : ["--start-maximized"]
 	})
 
 	this.context = await this.browser.newContext({
@@ -64,7 +66,7 @@ Before(async function (
 	})
 
 	this.page = await this.context.newPage()
-	this.page.setDefaultTimeout(this.parameters.timeout ?? 60000)
+	this.page.setDefaultTimeout(isCI ? 60000 : (this.parameters.timeout ?? 30000))
 
 	this.testData = {
 		scenarioName: pickle.name,

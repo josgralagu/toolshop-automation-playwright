@@ -10,17 +10,17 @@ export class SignUpPage {
 		this.page = page
 
 		// ==================== REGISTRATION FORM ELEMENTS ====================
-		this.firstNameField = page.getByPlaceholder("First name *")
-		this.lastNameField = page.getByPlaceholder("Your last name *")
-		this.dateOfBirthField = page.getByPlaceholder("YYYY-MM-DD")
-		this.streetField = page.getByPlaceholder("Your Street *")
-		this.postalCodeField = page.getByPlaceholder("Your Postcode *")
-		this.cityField = page.getByPlaceholder("Your City *")
-		this.stateField = page.getByPlaceholder("Your State *")
+		this.firstNameField = page.locator('[data-test="first-name"]')
+		this.lastNameField = page.locator('[data-test="last-name"]')
+		this.dateOfBirthField = page.locator('[data-test="dob"]')
+		this.streetField = page.locator('[data-test="street"]')
+		this.postalCodeField = page.locator('[data-test="postal_code"]')
+		this.cityField = page.locator('[data-test="city"]')
+		this.stateField = page.locator('[data-test="state"]')
 		this.countryDropdown = page.locator("#country")
-		this.phoneField = page.getByPlaceholder("Your phone *")
-		this.emailField = page.getByPlaceholder("Your email *")
-		this.passwordField = page.getByPlaceholder("Your password")
+		this.phoneField = page.locator('[data-test="phone"]')
+		this.emailField = page.locator('[data-test="email"]')
+		this.passwordField = page.locator('[data-test="password"]')
 		this.registerButton = page.getByRole("button", { name: "Register" })
 	}
 
@@ -41,6 +41,9 @@ export class SignUpPage {
 	 */
 
 	async completeRegistration(userData) {
+		// Wait for form to be ready before filling
+		await this.firstNameField.waitFor({ state: "visible", timeout: 30000 })
+
 		const fields = [
 			{ locator: this.firstNameField, value: userData.firstName },
 			{ locator: this.lastNameField, value: userData.lastName },
