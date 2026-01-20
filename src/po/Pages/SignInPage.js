@@ -10,8 +10,8 @@ export class SignInPage {
 		this.page = page
 
 		// ==================== LOGIN FORM ELEMENTS ====================
-		this.emailField = page.getByPlaceholder("Your email")
-		this.passwordField = page.getByPlaceholder("Your password")
+		this.emailField = page.locator('[data-test="email"]')
+		this.passwordField = page.locator('[data-test="password"]')
 		this.logInButton = page.locator("input.btnSubmit")
 	}
 
