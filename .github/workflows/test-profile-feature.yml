@@ -2,6 +2,16 @@ name: Test Profile Feature
 
 on:
   workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser to test'
+        required: false
+        default: 'chromium'
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - all
   push:
     branches: [ feature/typescript-cucumber ]
   pull_request:
@@ -9,8 +19,13 @@ on:
 
 jobs:
   test-profile:
-    timeout-minutes: 10
+    timeout-minutes: 15
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ github.event.inputs.browser == 'all' && fromJSON('["chromium", "firefox"]') || fromJSON(format('["{0}"]', github.event.inputs.browser || 'chromium')) }}
 
     steps:
       - name: Checkout code
@@ -20,31 +35,74 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install
+      - name: Install Playwright browsers with dependencies
+        run: npx playwright install ${{ matrix.browser }} --with-deps
 
-      - name: Install Cucumber
-        run: npm i @cucumber/cucumber -D
+      # ============ HEALTH CHECK ============
+      - name: Check application availability
+        run: |
+          echo "Checking if application is reachable..."
+          timeout 30 bash -c 'until curl -f -s https://practicesoftwaretesting.com > /dev/null; do
+            echo "Waiting for application...";
+            sleep 2;
+          done' || (echo "Application not reachable" && exit 1)
+          echo "✅ Application is reachable"
 
-      - name: Install tsx
-        run: npm i tsx -D
-
-      - name: Install Playwright
-        run: npm init playwright@latest --yes
-
-      - name: Run first feature only
-        run: npx cucumber-js --config cucumber/config/default.js --format html:reports/cucumber/chrome/cucumber-report.html --format json:reports/cucumber/chrome/cucumber-report.json cucumber/features/02-user-profile.feature
+      # ============ RUN TESTS ============
+      - name: Run Profile Feature Tests
+        run: npm run test:cucumber:profile
         env:
           CI: true
+          BROWSER: ${{ matrix.browser }}
+          PWDEBUG: 0
+          # Increase timeouts for CI
+          DEFAULT_TIMEOUT: 300000
+          NAVIGATION_TIMEOUT: 120000
+        continue-on-error: false
 
-      - name: Upload report
+      # ============ UPLOAD ARTIFACTS ============
+      - name: Upload HTML Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: profile-test-report
-          path: reports/cucumber/chrome/
+          name: profile-report-${{ matrix.browser }}-${{ github.run_number }}
+          path: reports/cucumber/cucumber-profile-report.html
           retention-days: 7
+
+      - name: Upload JSON Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: profile-json-${{ matrix.browser }}-${{ github.run_number }}
+          path: reports/cucumber/cucumber-profile-report.json
+          retention-days: 7
+
+      - name: Upload Screenshots (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.browser }}-${{ github.run_number }}
+          path: |
+            reports/cucumber/chrome/screenshots/
+            reports/cucumber/firefox/screenshots/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # ============ DEBUG INFO ============
+      - name: Print debug info on failure
+        if: failure()
+        run: |
+          echo "==================== DEBUG INFO ===================="
+          echo "Browser: ${{ matrix.browser }}"
+          echo "Node version:"
+          node --version
+          echo "NPM version:"
+          npm --version
+          echo "Playwright version:"
+          npx playwright --version
+          echo "===================================================="
