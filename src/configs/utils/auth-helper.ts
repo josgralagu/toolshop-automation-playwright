@@ -19,7 +19,8 @@ export async function authenticateNewUser (page: Page) {
     //Registration
     console.log(`📍 [1/4] Navigating to sign up page...`)
     await signUpPage.navigateToSignUp()
-    await page.waitForLoadState('domcontentloaded')
+    //await page.waitForLoadState('domcontentloaded')
+    await signUpPage.firstNameField.waitFor({ state: 'visible', timeout: 15000 })
     console.log(`✅ [1/4] Navigated to sign up`)
 
     console.log(`📍 [2/4] Completing registration...`)

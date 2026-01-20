@@ -54,7 +54,7 @@ Before(async function (
 	const browserType = browserName === 'firefox' ? firefox : chromium
 
 	this.browser = await browserType.launch({
-		headless: isCI ? true : false,
+		headless: isCI ? true : true,
 		args: isCI ? [
 			'--no-sandbox',
 			'--disable-setuid-sandbox',
