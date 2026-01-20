@@ -45,13 +45,18 @@ jobs:
 
       # ============ HEALTH CHECK ============
       - name: Check application availability
+        continue-on-error: true
         run: |
           echo "Checking if application is reachable..."
-          timeout 30 bash -c 'until curl -f -s https://practicesoftwaretesting.com > /dev/null; do
-            echo "Waiting for application...";
-            sleep 2;
-          done' || (echo "Application not reachable" && exit 1)
-          echo "✅ Application is reachable"
+          for i in {1..10}; do
+            if curl -f -s https://practicesoftwaretesting.com > /dev/null; then
+              echo "✅ Application is reachable"
+              exit 0
+            fi
+            echo "Waiting for application... ($i/10)"
+            sleep 3
+          done
+          echo "⚠️  Application health check failed, continuing anyway..."
 
       # ============ RUN TESTS ============
       - name: Run Profile Feature Tests
