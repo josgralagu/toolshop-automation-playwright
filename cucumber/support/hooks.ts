@@ -14,7 +14,7 @@ import * as path from "path"
 import { ToolshopWorld } from "./world"
 
 // Use higher timeout in CI environment
-const isCI = process.env.CI === 'true'
+const isCI = !!process.env.CI
 setDefaultTimeout(isCI ? 120000 : 60000)
 
 BeforeAll(async function () {
@@ -52,9 +52,6 @@ Before(async function (
 
 	// Select browser type
 	const browserType = browserName === 'firefox' ? firefox : chromium
-
-	// Use headless mode in CI (Linux without display)
-	const isCI = process.env.CI === 'true'
 
 	this.browser = await browserType.launch({
 		headless: isCI ? true : false,

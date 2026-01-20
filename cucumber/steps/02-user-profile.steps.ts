@@ -24,7 +24,7 @@ When('the user accesses his user profile', async function(this: CustomWorld) {
 When('the user updates his phone number with valid data {string}',
     async function(this: CustomWorld, phoneNumber: string) {
         const profilePage = pages("profile", this.page!)
-        await profilePage.updatePhoneNumber(phoneNumber)
+        await profilePage.updatePhoneNumber(phoneNumber, false)
         this.testData.expectedPhone = phoneNumber
         console.log(`✅ Phone number updated to: ${phoneNumber}`)
     }
@@ -33,7 +33,7 @@ When('the user updates his phone number with valid data {string}',
 When('the user attempts to update his phone number with invalid data',
     async function(this:CustomWorld) {
         const profilePage = pages("profile", this.page!)
-        await profilePage.updatePhoneNumber(invalidProfileUpdate.phone)
+        await profilePage.updatePhoneNumber(invalidProfileUpdate.phone, false)
         this.testData.expectedPhone = invalidProfileUpdate.phone
         console.log(`⚠️  Attempted update with invalid data: ${invalidProfileUpdate.phone}`)
     }

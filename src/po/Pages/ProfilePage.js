@@ -59,10 +59,13 @@ export class ProfilePage {
 	/**
 	 * Complete phone number update flow
 	 * @param {string} number - New phone number to set
+	 * @param {boolean} autoSubmit - Whether to auto-submit the form (default: true)
 	 */
-	async updatePhoneNumber(number) {
+	async updatePhoneNumber(number, autoSubmit = true) {
 		await this.waitForProfileDataLoaded()
 		await this.fillPhoneNumber(number)
-		await this.submitProfileChanges()
+		if (autoSubmit) {
+			await this.submitProfileChanges()
+		}
 	}
 }
