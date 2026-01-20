@@ -55,7 +55,12 @@ Before(async function (
 
 	this.browser = await browserType.launch({
 		headless: isCI ? true : false,
-		args: isCI ? [] : ["--start-maximized"]
+		args: isCI ? [
+			'--no-sandbox',
+			'--disable-setuid-sandbox',
+			'--disable-dev-shm-usage',
+			'--disable-gpu'
+		] : ["--start-maximized"]
 	})
 
 	this.context = await this.browser.newContext({

@@ -9,6 +9,9 @@ export class SignUpPage {
 	constructor(page) {
 		this.page = page
 
+		// Determine timeout based on environment
+		this.timeout = process.env.CI ? 180000 : 30000 // 3min in CI, 30s locally
+
 		// ==================== REGISTRATION FORM ELEMENTS ====================
 		this.firstNameField = page.locator('[data-test="first-name"]')
 		this.lastNameField = page.locator('[data-test="last-name"]')
@@ -42,7 +45,7 @@ export class SignUpPage {
 
 	async completeRegistration(userData) {
 		// Wait for form to be ready before filling
-		await this.firstNameField.waitFor({ state: "visible", timeout: 120000 })
+		await this.firstNameField.waitFor({ state: "visible", timeout: this.timeout })
 
 		const fields = [
 			{ locator: this.firstNameField, value: userData.firstName },
