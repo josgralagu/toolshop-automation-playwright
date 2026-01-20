@@ -1,0 +1,50 @@
+name: Test Profile Feature
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ feature/typescript-cucumber ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test-profile:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Cucumber
+        run: npm i @cucumber/cucumber -D
+
+      - name: Install tsx
+        run: npm i tsx -D
+
+      - name: Install Playwright
+        run: npm init playwright@latest --yes
+
+      - name: Run first feature only
+        run: npx cucumber-js --config cucumber/config/default.js --format html:reports/cucumber/chrome/cucumber-report.html --format json:reports/cucumber/chrome/cucumber-report.json cucumber/features/02-user-profile.feature
+        env:
+          CI: true
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: profile-test-report
+          path: reports/cucumber/chrome/
+          retention-days: 7
