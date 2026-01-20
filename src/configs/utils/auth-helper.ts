@@ -17,14 +17,24 @@ export async function authenticateNewUser (page: Page) {
     console.log(`🆕 Creating test user: ${user.email}`)
 
     //Registration
+    console.log(`📍 [1/4] Navigating to sign up page...`)
     await signUpPage.navigateToSignUp()
     await page.waitForLoadState('domcontentloaded')
+    console.log(`✅ [1/4] Navigated to sign up`)
+
+    console.log(`📍 [2/4] Completing registration...`)
     await signUpPage.completeRegistration(user)
+    console.log(`✅ [2/4] Registration completed`)
 
     //Login
+    console.log(`📍 [3/4] Logging in...`)
     await signInPage.logIn(user.email, user.password)
     await page.waitForLoadState('domcontentloaded')
+    console.log(`✅ [3/4] Logged in`)
+
+    console.log(`📍 [4/4] Waiting for user name...`)
     await myAccountPage.waitForUserNameVisible()
+    console.log(`✅ [4/4] User name visible`)
 
     console.log(`✅ User authenticated: ${user.email}`)
 
