@@ -1,0 +1,113 @@
+name: Test Profile Feature
+
+on:
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser to test'
+        required: false
+        default: 'chromium'
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - all
+  push:
+    branches: [ feature/typescript-cucumber ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test-profile:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: ${{ github.event.inputs.browser == 'all' && fromJSON('["chromium", "firefox"]') || fromJSON(format('["{0}"]', github.event.inputs.browser || 'chromium')) }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers with dependencies
+        run: npx playwright install ${{ matrix.browser }} --with-deps
+
+      # ============ HEALTH CHECK ============
+      - name: Check application availability
+        continue-on-error: true
+        run: |
+          echo "Checking if application is reachable..."
+          for i in {1..10}; do
+            if curl -f -s https://practicesoftwaretesting.com > /dev/null; then
+              echo "✅ Application is reachable"
+              exit 0
+            fi
+            echo "Waiting for application... ($i/10)"
+            sleep 3
+          done
+          echo "⚠️  Application health check failed, continuing anyway..."
+
+      # ============ RUN TESTS ============
+      - name: Run Profile Feature Tests
+        run: npm run test:cucumber:profile
+        env:
+          CI: true
+          BROWSER: ${{ matrix.browser }}
+          PWDEBUG: 0
+          # Increase timeouts for CI
+          DEFAULT_TIMEOUT: 300000
+          NAVIGATION_TIMEOUT: 120000
+        continue-on-error: false
+
+      # ============ UPLOAD ARTIFACTS ============
+      - name: Upload HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: profile-report-${{ matrix.browser }}-${{ github.run_number }}
+          path: reports/cucumber/cucumber-profile-report.html
+          retention-days: 7
+
+      - name: Upload JSON Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: profile-json-${{ matrix.browser }}-${{ github.run_number }}
+          path: reports/cucumber/cucumber-profile-report.json
+          retention-days: 7
+
+      - name: Upload Screenshots (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.browser }}-${{ github.run_number }}
+          path: |
+            reports/cucumber/chrome/screenshots/
+            reports/cucumber/firefox/screenshots/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # ============ DEBUG INFO ============
+      - name: Print debug info on failure
+        if: failure()
+        run: |
+          echo "==================== DEBUG INFO ===================="
+          echo "Browser: ${{ matrix.browser }}"
+          echo "Node version:"
+          node --version
+          echo "NPM version:"
+          npm --version
+          echo "Playwright version:"
+          npx playwright --version
+          echo "===================================================="
