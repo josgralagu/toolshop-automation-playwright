@@ -15,7 +15,7 @@ import { ToolshopWorld } from "./world"
 
 // Use higher timeout in CI environment
 const isCI = !!process.env.CI
-setDefaultTimeout(isCI ? 120000 : 60000)
+setDefaultTimeout(isCI ? 300000 : 60000)
 
 BeforeAll(async function () {
 	console.log("🎬 Starting Cucumber Test Suite")
@@ -66,7 +66,7 @@ Before(async function (
 	})
 
 	this.page = await this.context.newPage()
-	this.page.setDefaultTimeout(isCI ? 120000 : (this.parameters.timeout ?? 60000))
+	this.page.setDefaultTimeout(isCI ? 60000 : (this.parameters.timeout ?? 30000))
 
 	this.testData = {
 		scenarioName: pickle.name,
