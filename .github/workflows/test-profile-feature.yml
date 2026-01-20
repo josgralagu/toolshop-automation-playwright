@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: npx playwright install
+
       - name: Install Cucumber
         run: npm i @cucumber/cucumber -D
 
