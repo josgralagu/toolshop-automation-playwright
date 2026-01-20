@@ -41,6 +41,9 @@ export class SignUpPage {
 	 */
 
 	async completeRegistration(userData) {
+		// Wait for form to be ready before filling
+		await this.firstNameField.waitFor({ state: "visible", timeout: 30000 })
+
 		const fields = [
 			{ locator: this.firstNameField, value: userData.firstName },
 			{ locator: this.lastNameField, value: userData.lastName },
