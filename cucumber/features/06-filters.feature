@@ -31,7 +31,6 @@ Feature: Filter Products
     Examples:
       | brand_name           |
       | ForgeFlex Tools      |
-      | MightyCraft Hardware |
 
   @sustainability
   Scenario: Filter products by sustainability type

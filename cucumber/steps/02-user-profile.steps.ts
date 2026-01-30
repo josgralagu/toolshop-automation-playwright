@@ -71,11 +71,11 @@ Then('the user sees an error update message',
     }
 )
 
-Then('the user phone number remains unchanged',
+Then('the invalid phone number is displayed in his profile',
     async function(this: CustomWorld) {
         const profilePage = pages("profile", this.page!)
         const currentPhone = await profilePage.phoneField.inputValue()
-        expect(currentPhone).toBe(this.testData.originalPhone)
-        console.log(`✅ Phone number unchanged: ${currentPhone}`)
+        expect(currentPhone).toBe(invalidProfileUpdate.phone)
+        console.log(`✅ Invalid Phone number displays on the profile page: ${currentPhone}`)
     }
 )

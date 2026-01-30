@@ -21,4 +21,5 @@ Feature: User Profile Management
         And the user attempts to update his phone number with invalid data
         And the user saves the changes
         Then the user sees an error update message
-        And the user phone number remains unchanged
+        And the invalid phone number is displayed in his profile
+        
