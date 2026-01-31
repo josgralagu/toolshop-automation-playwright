@@ -18,6 +18,26 @@ export class BookingService {
 			.query({ firstname, lastname })
 	}
 
+	/**
+	 * Filter bookings by dates. Both parameters are optional.
+	 * @param {Object} options - Filter options
+	 * @param {string} [options.checkin] - Checkin date filter (CCYY-MM-DD)
+	 * @param {string} [options.checkout] - Checkout date filter (CCYY-MM-DD)
+	 */
+	static filterByDates({ checkin, checkout } = {}) {
+		const params = {}
+		if (checkin) params.checkin = checkin
+		if (checkout) params.checkout = checkout
+
+		return apiClient
+			.get(Endpoints.byDates())
+			.set(HeaderSets.accept)
+			.query(params)
+	}
+
+	/**
+	 * @deprecated Use filterByDates() instead for more flexibility
+	 */
 	static getByDates(checkin, checkout) {
 		return apiClient
 			.get(Endpoints.byDates())

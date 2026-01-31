@@ -13,7 +13,7 @@ describe("GET /booking - Get booking IDs – equivalence class for future date f
 
 	before(async () => {
 		res = await timed(() =>
-			BookingService.getByDates("2026-01-01", "2026-01-02")
+			BookingService.filterByDates({ checkin: "2027-01-01", checkout: "2027-01-02" })
 		)
 	})
 
@@ -38,13 +38,13 @@ describe("GET /booking - Get booking IDs – equivalence class for future date f
 	})
 })
 
-describe("GET /booking - Get booking IDs – equivalence class for an old date filters", () => {
+describe("GET /booking - Get booking IDs – equivalence class for checkout date filter", () => {
 	let res
 
 	before(async () => {
 		await BookingService.create(newBookingPayload)
 		res = await timed(() =>
-			BookingService.getByDates("2018-01-01", "2019-01-01")
+			BookingService.filterByDates({ checkout: "2019-01-01" })
 		)
 	})
 
