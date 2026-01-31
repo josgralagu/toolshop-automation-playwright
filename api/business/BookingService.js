@@ -19,12 +19,16 @@ export class BookingService {
 	}
 
 	/**
-	 * Filter bookings by dates. Both parameters are optional.
+	 * Filter bookings by dates. At least one date parameter is required.
 	 * @param {Object} options - Filter options
 	 * @param {string} [options.checkin] - Checkin date filter (CCYY-MM-DD)
 	 * @param {string} [options.checkout] - Checkout date filter (CCYY-MM-DD)
 	 */
-	static filterByDates({ checkin, checkout } = {}) {
+	static filterByDates({ checkin, checkout }) {
+		if (!checkin && !checkout) {
+			throw new Error("At least one date parameter (checkin or checkout) is required")
+		}
+
 		const params = {}
 		if (checkin) params.checkin = checkin
 		if (checkout) params.checkout = checkout
