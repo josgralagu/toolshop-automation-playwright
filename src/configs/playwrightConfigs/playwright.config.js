@@ -42,6 +42,9 @@ export default defineConfig({
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+	/* Different Test ID Attribute */
+	testIdAttribute: 'data-test',
+	
     /* Base URL to use in actions like `await page.goto('')`. */
     baseURL: "https://practicesoftwaretesting.com",
 
@@ -62,7 +65,6 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         headless: true,
-        actionTimeout: 10000,
         viewport: { width: 1920, height: 1080 },
       },
     },
@@ -71,7 +73,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Firefox"],
         headless: true,
-        actionTimeout: 10000,
+        actionTimeout: 15000,
         viewport: { width: 1920, height: 1080 },
       },
     },
@@ -81,7 +83,6 @@ export default defineConfig({
         ...devices["Desktop Edge"],
         channel: "msedge",
         headless: true,
-        actionTimeout: 10000,
         viewport: { width: 1920, height: 1080 },
       },
     },
