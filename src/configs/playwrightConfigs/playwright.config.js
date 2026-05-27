@@ -9,6 +9,8 @@ import { defineConfig, devices } from "@playwright/test";
 // import path from 'path';
 // dotenv.config({ path: path.resolve(__dirname, '.env') });
 
+const isCI = !!process.env.CI;
+
 /**
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -20,7 +22,7 @@ export default defineConfig({
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
-  forbidOnly: !!process.env.CI,
+  forbidOnly: isCI,
   /* Number of retries for all tests */
   retries: 1,
   /* Number of workers for parallel execution */
@@ -64,7 +66,7 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        headless: false,
+        headless: isCI,
         actionTimeout: 15000,
         viewport: { width: 1920, height: 1080 },
       },
@@ -83,7 +85,8 @@ export default defineConfig({
       use: {
         ...devices["Desktop Edge"],
         channel: "msedge",
-        headless: true,
+        headless: isCI,
+        actionTimeout: 15000,
         viewport: { width: 1920, height: 1080 },
       },
     },

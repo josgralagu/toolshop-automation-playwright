@@ -6,7 +6,7 @@
 // ====================================================================
 
 // Import all component classes
-import { NavigationBarComponent } from "./navigationBar.component.js"
+import { NavigationBarComponent } from "./NavigationBarComponent.js"
 import { SearchComponent } from "./SearchComponent.js"
 import { FilterComponent } from "./FilterComponent.js"
 import { PaginationComponent } from "./PaginationComponent.js"
