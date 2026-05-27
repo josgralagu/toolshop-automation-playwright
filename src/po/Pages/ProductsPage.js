@@ -1,10 +1,6 @@
 // ====================================================================
-// PRODUCTS PAGE - REFACTORED VERSION
+// PRODUCTS PAGE
 // ====================================================================
-// Refactored using DRY and SOLID principles with component composition
-// Extends BasePage and uses reusable components for search, filters, and pagination
-// ====================================================================
-
 import { BasePage } from "./BasePage.js"
 import {
 	SearchComponent,
@@ -17,231 +13,158 @@ export class ProductsPage extends BasePage {
 	constructor(page) {
 		super(page)
 
-		// Initialize reusable components
 		this.searchComponent = new SearchComponent(page)
 		this.filterComponent = new FilterComponent(page)
 		this.paginationComponent = new PaginationComponent(page)
 
-		// ==================== PRODUCT DISPLAY ELEMENTS ====================
+		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
 		this.productCards = page.locator("a.card")
-		this.productName = page.locator('h5[data-test="product-name"]')
-		this.outOfStockLabels = page.locator('[data-test="out-of-stock"]')
-		this.ecoBadges = page.locator('[data-test="eco-badge"]')
+		this.productName = page.getByTestId("product-name")
+		this.outOfStockLabels = page.getByTestId("out-of-stock")
+		this.ecoBadges = page.getByTestId("eco-badge")
 	}
 
-	// ==================== NAVIGATION METHODS ====================
+	// ==================== NAVIGATION ====================
 
-	/**
-	 * Navigate to products page
-	 */
 	async navigateToProductsPage() {
 		await this.navigateTo(URLS.BASE)
 		await this.waitForInitialProductsLoad()
 	}
 
-	// ==================== SEARCH METHODS (Delegated to SearchComponent) ====================
+	// ==================== SEARCH ====================
+	// Métodos de búsqueda delegados a SearchComponent.
+	// Se mantienen como fachada para que commands.js no necesite
+	// conocer la estructura interna de componentes.
 
-	/**
-	 * Fill search field with product name
-	 * @param {string} product - Product name to search for
-	 */
-	async fillSearch(product) {
-		await this.searchComponent.fillSearch(product)
-	}
-
-	/**
-	 * Complete search operation for a product
-	 * @param {string} product - Product name to search for
-	 */
+	/** @param {string} product */
 	async searchProduct(product) {
 		await this.searchComponent.searchProduct(product)
 	}
 
-	/**
-	 * Wait for search results to become visible
-	 */
-	async waitForVisibleResult() {
+	async waitForSearchResults() {
 		await this.searchComponent.waitForSearchResults()
 	}
 
-	/**
-	 * Get first product name from search results
-	 * @returns {string} First product name
-	 */
-	async getFirstProductName() {
-		return await this.searchComponent.getFirstProductName()
-	}
+	// ==================== FILTERS ====================
 
-	// ==================== FILTER METHODS (Delegated to FilterComponent) ====================
-
-	/**
-	 * Select subcategory filter by exact name match
-	 * @param {string} subcategoryName - Subcategory name to filter by
-	 */
+	/** @param {string} subcategoryName */
 	async clickSubcategoryCheckbox(subcategoryName) {
 		await this.filterComponent.clickSubcategoryCheckbox(subcategoryName)
 	}
 
-	/**
-	 * Select brand filter by name
-	 * @param {string} brandName - Brand name to filter by
-	 */
+	/** @param {string} brandName */
 	async selectBrandByName(brandName) {
 		await this.filterComponent.selectBrandByName(brandName)
 	}
 
-	/**
-	 * Deselect brand filter by name
-	 * @param {string} brandName - Brand name to deselect
-	 */
+	/** @param {string} brandName */
 	async deselectBrandByName(brandName) {
 		await this.filterComponent.deselectBrandByName(brandName)
 	}
 
-	/**
-	 * Activate eco-friendly filter
-	 */
 	async clickEcoFriendlyFilter() {
 		await this.filterComponent.clickEcoFriendlyFilter()
 	}
 
-	/**
-	 * Wait for filter operation to complete
-	 */
+	// waitForFilterCycle y waitForFilterResults se usan desde commands.js
 	async waitForFilterCycle() {
 		await this.filterComponent.waitForFilterCycle()
 	}
 
-	/**
-	 * Wait for filter results to load
-	 */
 	async waitForFilterResults() {
 		await this.filterComponent.waitForFilterResults()
 	}
 
-	// ==================== PAGINATION METHODS (Delegated to PaginationComponent) ====================
+	// ==================== PAGINATION ====================
 
-	/**
-	 * Check if next page is available
-	 * @returns {boolean} True if next page exists and is enabled
-	 */
+	/** @returns {Promise<boolean>} */
 	async hasNextPage() {
 		return await this.paginationComponent.hasNextPage()
 	}
 
-	/**
-	 * Get the number of pagination pages available
-	 * @returns {number} Count of pagination pages
-	 */
-	async getNextPageCount() {
-		return await this.paginationComponent.getPageCount()
-	}
-
-	/**
-	 * Navigate to next page of results
-	 */
 	async clickNextPage() {
 		await this.paginationComponent.clickNextPage()
 	}
 
-	// ==================== PRODUCT INTERACTION METHODS ====================
+	// ==================== PRODUCT INTERACTION ====================
 
 	/**
-	 * Access product detail page by product name
-	 * @param {string} productName - Name of product to access
+	 * Navigate to product detail page by name.
+	 * @param {string} productName
 	 */
 	async accessToProductDetail(productName) {
-		await this.waitForVisibleResult()
+		await this.waitForSearchResults()
 		await this.clickOnProduct(productName)
 		await this.waitForUrl(/\/product\//)
 	}
 
 	/**
-	 * Get locator for specific product by name
-	 * @param {string} productName - Product name to locate
-	 * @returns {Locator} Product element locator
+	 * Get locator for a product card filtered by name.
+	 * Uses chained filter — recommended Playwright pattern.
+	 * @param {string} productName
+	 * @returns {import('@playwright/test').Locator}
 	 */
 	getProductTitleLocator(productName) {
 		return this.productCards.filter({
-			has: this.page.locator(
-				`h5[data-test="product-name"]:has-text("${productName}")`
-			)
+			has: this.page.getByTestId("product-name").filter({ hasText: productName })
 		})
 	}
 
 	/**
-	 * Click on specific product by name
-	 * @param {string} productName - Product name to click
+	 * Click on a product card by name.
+	 * click() auto-waits for visibility.
+	 * @param {string} productName
 	 */
 	async clickOnProduct(productName) {
-		const productLocator = this.getProductTitleLocator(productName)
-		await this.safeClick(productLocator)
+		await this.getProductTitleLocator(productName).click()
+	}
+
+	/**
+	 * Search and navigate to product detail in one step.
+	 * @param {string} productName
+	 */
+	async searchAndSelectProduct(productName) {
+		await this.searchProduct(productName)
+		await this.waitForSearchResults()
+		await this.accessToProductDetail(productName)
 	}
 
 	// ==================== WAIT METHODS ====================
 
-	/**
-	 * Wait for initial products to load on page
-	 * @param {number} timeout - Timeout in milliseconds (default: 15000)
-	 */
+	/** @param {number} timeout */
 	async waitForInitialProductsLoad(timeout = 15000) {
 		await this.waitForProductsVisible(this.productName, null, timeout)
 	}
 
-	// ==================== VALIDATION METHODS ====================
+	// ==================== VALIDATION ====================
 
 	/**
-	 * Get product names that don't match expected keywords
-	 * @param {string[]} keywords - Expected keywords to match against
-	 * @returns {string[]} Array of invalid product names
+	 * Get product names that don't contain any of the expected keywords.
+	 * @param {string[]} keywords
+	 * @returns {Promise<string[]>}
 	 */
 	async getInvalidProductNames(keywords) {
 		const productNames = await this.getProductNames()
 		if (productNames.length === 0) throw new Error("No products found")
-
 		return productNames.filter(
 			(name) => !this.doesProductMatchKeywords(name, keywords)
 		)
 	}
 
 	/**
-	 * Validate products contain expected keywords
-	 * @param {string[]} keywords - Expected keywords to validate
-	 * @returns {object} Validation result with status and invalid products
-	 */
-	async validateProductsContainKeywords(keywords) {
-		const productNames = await this.getProductNames()
-		if (productNames.length === 0) {
-			throw new Error("No hay productos para validar")
-		}
-
-		const invalidProducts = await this.getInvalidProductNames(keywords)
-
-		return {
-			valid: invalidProducts.length === 0,
-			invalidProducts,
-			keywords
-		}
-	}
-
-	/**
-	 * Check if product name matches any of the keywords (case-insensitive)
-	 * @param {string} productName - Product name to check
-	 * @param {string[]} keywords - Keywords to match against
-	 * @returns {boolean} True if product name matches any keyword
+	 * Case-insensitive keyword match against a product name.
+	 * @param {string} productName
+	 * @param {string[]} keywords
+	 * @returns {boolean}
 	 */
 	doesProductMatchKeywords(productName, keywords) {
 		const normalizedName = productName.trim().toLowerCase()
-		const normalizedKeywords = keywords.map((k) => k.toLowerCase())
-
-		return normalizedKeywords.some((keyword) =>
-			normalizedName.includes(keyword)
-		)
+		return keywords.map((k) => k.toLowerCase()).some((kw) => normalizedName.includes(kw))
 	}
 
 	/**
-	 * Validate current page has only eco-friendly products
-	 * @returns {boolean} True if all products have eco badges
+	 * Validate that all products on current page have eco badges.
+	 * @returns {Promise<boolean>}
 	 */
 	async validateCurrentPageEcoBadges() {
 		const ecoBadgesCount = await this.getElementCount(this.ecoBadges)
@@ -249,127 +172,39 @@ export class ProductsPage extends BasePage {
 		return ecoBadgesCount === totalProducts && totalProducts > 0
 	}
 
-	// ==================== DATA RETRIEVAL METHODS ====================
+	// ==================== DATA RETRIEVAL ====================
 
-	/**
-	 * Get count of products on current page
-	 * @returns {number} Product count
-	 */
+	/** @returns {Promise<number>} */
 	async getProductCount() {
 		await this.waitForElementVisible(this.productName.first())
 		return await this.productCards.count()
 	}
 
 	/**
-	 * Get names of all products on current page
-	 * @returns {string[]} Array of product names
+	 * Get all product names on current page.
+	 * allTextContents() has no auto-wait — waitForInitialProductsLoad
+	 * must be called before this.
+	 * @returns {Promise<string[]>}
 	 */
 	async getProductNames() {
 		return await this.productName.allTextContents()
 	}
 
-	/**
-	 * Get current page product count
-	 * @returns {number} Number of products on current page
-	 */
+	/** @returns {Promise<number>} */
 	async getCurrentPageProductCount() {
 		return await this.getElementCount(this.productCards)
 	}
 
-	// ==================== STATUS CHECK METHODS ====================
+	// ==================== STATUS CHECKS ====================
 
-	/**
-	 * Check if products are visible on page
-	 * @returns {boolean} True if products are visible
-	 */
+	/** @returns {Promise<boolean>} */
 	async hasProductsVisible() {
 		return await this.isElementVisible(this.productName.first())
 	}
 
-	/**
-	 * Check if out-of-stock products exist on page
-	 * @returns {boolean} True if out-of-stock products found
-	 */
+	/** @returns {Promise<boolean>} */
 	async hasOutOfStockProducts() {
 		await this.waitForInitialProductsLoad()
-		const count = await this.outOfStockLabels.count()
-		return count > 0
-	}
-
-	/**
-	 * Verify product name matches expected name
-	 * @param {string} expectedName - Expected product name
-	 * @returns {boolean} True if product name matches
-	 */
-	async verifyProductNameMatches(expectedName) {
-		const actualName = await this.getFirstProductName()
-		return actualName === expectedName
-	}
-
-	// ==================== COMPOSITE METHODS ====================
-
-	/**
-	 * Search and select product in one operation
-	 * @param {string} productName - Product name to search and select
-	 */
-	async searchAndSelectProduct(productName) {
-		await this.searchProduct(productName)
-		await this.waitForVisibleResult()
-		await this.accessToProductDetail(productName)
-	}
-
-	/**
-	 * Apply multiple filters in sequence
-	 * @param {Object} filters - Object containing filter options
-	 * @param {string} filters.brand - Brand name to filter by
-	 * @param {string} filters.subcategory - Subcategory name to filter by
-	 * @param {boolean} filters.ecoFriendly - Whether to apply eco filter
-	 */
-	async applyMultipleFilters(filters) {
-		const filterActions = [
-			{
-				condition: filters.brand,
-				action: () => this.selectBrandByName(filters.brand)
-			},
-			{
-				condition: filters.subcategory,
-				action: () => this.clickSubcategoryCheckbox(filters.subcategory)
-			},
-			{
-				condition: filters.ecoFriendly,
-				action: () => this.clickEcoFriendlyFilter()
-			}
-		]
-
-		for (const { condition, action } of filterActions) {
-			if (condition) await action()
-		}
-	}
-
-	/**
-	 * Clear all active filters
-	 * @param {string[]} brands - Array of brand names that might be active
-	 */
-	async clearAllFilters(brands = []) {
-		await this.filterComponent.clearAllBrandFilters(brands)
-		await this.filterComponent.clearEcoFilter()
-	}
-
-	/**
-	 * Navigate through all pages and collect data
-	 * @param {Function} dataCollector - Function to collect data from each page
-	 * @param {number} maxPages - Maximum number of pages to process
-	 * @returns {Array} Collected data from all pages
-	 */
-	async collectDataAcrossPages(dataCollector, maxPages = 10) {
-		const pageProcessor = async (pageNumber) => {
-			await this.waitForInitialProductsLoad()
-			return await dataCollector(pageNumber)
-		}
-
-		return await this.paginationComponent.navigateThroughAllPages(
-			pageProcessor,
-			maxPages
-		)
+		return (await this.outOfStockLabels.count()) > 0
 	}
 }

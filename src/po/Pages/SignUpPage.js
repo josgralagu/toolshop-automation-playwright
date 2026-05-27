@@ -9,21 +9,25 @@ export class SignUpPage {
 	constructor(page) {
 		this.page = page
 
-		// Determine timeout based on environment
-		this.timeout = process.env.CI ? 180000 : 30000 // 3min in CI, 30s locally
+		this.timeout = process.env.CI ? 180000 : 30000
 
 		// ==================== REGISTRATION FORM ELEMENTS ====================
-		this.firstNameField = page.locator('[data-test="first-name"]')
-		this.lastNameField = page.locator('[data-test="last-name"]')
-		this.dateOfBirthField = page.locator('[data-test="dob"]')
-		this.streetField = page.locator('[data-test="street"]')
-		this.postalCodeField = page.locator('[data-test="postal_code"]')
-		this.cityField = page.locator('[data-test="city"]')
-		this.stateField = page.locator('[data-test="state"]')
-		this.countryDropdown = page.locator("#country")
-		this.phoneField = page.locator('[data-test="phone"]')
-		this.emailField = page.locator('[data-test="email"]')
-		this.passwordField = page.locator('[data-test="password"]')
+		// getByLabel es la práctica recomendada para inputs de formulario,
+		// ya que refleja cómo los usuarios y lectores de pantalla identifican los campos.
+		// getByTestId se usa como fallback donde no hay label asociado claro.
+		this.firstNameField = page.getByLabel("First name")
+		this.lastNameField = page.getByLabel("Last name")
+		this.dateOfBirthField = page.getByTestId("dob")
+		this.streetField = page.getByLabel("Street")
+		this.postalCodeField = page.getByTestId("postal_code")
+		this.houseNumberField = page.getByLabel("House number")
+		this.cityField = page.getByLabel("City")
+		this.stateField = page.getByLabel("State")
+		// <select> sin label semántico claro → getByRole con name o getByTestId
+		this.countryDropdown = page.getByRole("combobox", { name: /country/i })
+		this.phoneField = page.getByLabel("Phone")
+		this.emailField = page.getByLabel("Email address")
+		this.passwordField = page.getByLabel("Password")
 		this.registerButton = page.getByRole("button", { name: "Register" })
 	}
 
@@ -42,17 +46,14 @@ export class SignUpPage {
 	 * Complete user registration with provided data
 	 * @param {object} userData - User registration data object
 	 */
-
 	async completeRegistration(userData) {
-		// Wait for form to be ready before filling
-		await this.firstNameField.waitFor({ state: "visible", timeout: this.timeout })
-
 		const fields = [
 			{ locator: this.firstNameField, value: userData.firstName },
 			{ locator: this.lastNameField, value: userData.lastName },
 			{ locator: this.dateOfBirthField, value: userData.dateOfBirth },
 			{ locator: this.streetField, value: userData.address },
 			{ locator: this.postalCodeField, value: userData.postcode },
+			{ locator: this.houseNumberField, value: userData.houseNumber },
 			{ locator: this.cityField, value: userData.city },
 			{ locator: this.stateField, value: userData.state },
 			{ locator: this.phoneField, value: userData.phone },
@@ -60,17 +61,13 @@ export class SignUpPage {
 			{ locator: this.passwordField, value: userData.password }
 		]
 
-		// Fill all form fields with user data
 		for (const { locator, value } of fields) {
 			await locator.fill(value)
 		}
 
-		// Select country from dropdown and submit registration
 		await this.countryDropdown.selectOption(userData.country)
-		await this.registerButton.waitFor({ state: "visible", timeout: 10000 })
 		await this.registerButton.click()
 
-		// Wait for redirect to login page after successful registration
 		await this.page.waitForURL("**/auth/login", {
 			waitUntil: "load",
 			timeout: 30000

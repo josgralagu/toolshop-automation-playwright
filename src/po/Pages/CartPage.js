@@ -7,43 +7,45 @@ export class CartPage {
 	constructor(page) {
 		this.page = page
 
-		// ==================== CART TABLE ELEMENTS ====================
-		this.cartItems = page.locator(
-			"table.table-hover tbody tr.ng-star-inserted"
-		)
-
 		// ==================== PRODUCT INFORMATION ELEMENTS ====================
-		this.productTitle = page.locator('[data-test="product-title"]')
-		this.productQuantity = page.locator('[data-test="product-quantity"]')
-		this.productPrice = page.locator('[data-test="product-price"]')
-		this.linePrice = page.locator('[data-test="line-price"]')
-		this.cartTotal = page.locator('[data-test="cart-total"]')
+		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
+		//
+		// Se eliminó cartItems (tr.ng-star-inserted) porque Angular renderiza la tabla
+		// en dos fases: primero el <table>/<tbody> vacío, luego llena las filas con datos.
+		// Esperar por tr.ng-star-inserted causa timeout porque el tbody ya existe en el DOM
+		// pero sin filas durante el primer render. Se espera directamente por los elementos
+		// de datos (product-title, cart-total) que solo aparecen cuando Angular terminó
+		// de renderizar con los datos del servidor.
+		this.productTitle = page.getByTestId("product-title")
+		this.productQuantity = page.getByTestId("product-quantity")
+		this.productPrice = page.getByTestId("product-price")
+		this.linePrice = page.getByTestId("line-price")
+		this.cartTotal = page.getByTestId("cart-total")
 	}
 
 	// ==================== WAIT METHODS ====================
 
 	/**
-	 * Wait for cart to load completely including Angular rendering
+	 * Wait for cart to load completely including Angular rendering.
+	 *
+	 * Corrección: se reemplazó la espera en tr.ng-star-inserted por product-title
+	 * y cart-total, que son los elementos de datos reales. La tabla tiene dos fases
+	 * de render en Angular: shell estructural (visible rápido) → datos (async).
+	 * Esperar el shell (table.table-hover o tr.ng-star-inserted) no garantiza
+	 * que los datos ya estén presentes.
 	 */
 	async waitForCartLoad() {
-		// Wait for table container to be visible
-		const tableLocator = this.page.locator("table.table-hover")
-		await tableLocator.waitFor({ state: "visible", timeout: 15000 })
-
-		// Wait for first cart item row to be visible
-		await this.cartItems
-			.first()
-			.waitFor({ state: "visible", timeout: 15000 })
-
-		// Wait for cart total to be calculated and visible
-		await this.cartTotal.waitFor({ state: "visible", timeout: 15000 })
+		// product-title garantiza que al menos una fila con datos está renderizada
+		await this.productTitle.first().waitFor({ state: "visible", timeout: 20000 })
+		// cart-total garantiza que el total fue calculado y renderizado
+		await this.cartTotal.waitFor({ state: "visible", timeout: 20000 })
 	}
 
 	// ==================== DATA RETRIEVAL METHODS ====================
 
 	/**
 	 * Get names of all products in cart
-	 * @returns {string[]} Array of product names
+	 * @returns {Promise<string[]>} Array of product names
 	 */
 	async getProductNames() {
 		const rawTexts = await this.productTitle.allTextContents()
@@ -52,7 +54,7 @@ export class CartPage {
 
 	/**
 	 * Get quantities of all products in cart
-	 * @returns {number[]} Array of product quantities
+	 * @returns {Promise<number[]>} Array of product quantities
 	 */
 	async getQuantities() {
 		const inputs = await this.productQuantity.all()
@@ -63,7 +65,7 @@ export class CartPage {
 
 	/**
 	 * Get prices of all products in cart
-	 * @returns {number[]} Array of product prices
+	 * @returns {Promise<number[]>} Array of product prices
 	 */
 	async getPrices() {
 		const cells = await this.productPrice.all()
@@ -76,7 +78,7 @@ export class CartPage {
 
 	/**
 	 * Get line totals for all products in cart
-	 * @returns {number[]} Array of line totals (price * quantity)
+	 * @returns {Promise<number[]>} Array of line totals (price * quantity)
 	 */
 	async getLineTotals() {
 		const linePriceCells = await this.linePrice.all()
@@ -90,7 +92,7 @@ export class CartPage {
 
 	/**
 	 * Get total cart amount
-	 * @returns {number} Cart total amount
+	 * @returns {Promise<number>} Cart total amount
 	 */
 	async getCartTotal() {
 		const text = await this.cartTotal.textContent()

@@ -22,7 +22,7 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Number of retries for all tests */
-  retries: 2,
+  retries: 1,
   /* Number of workers for parallel execution */
   workers: 2,
 
@@ -64,7 +64,8 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
-        headless: true,
+        headless: false,
+        actionTimeout: 15000,
         viewport: { width: 1920, height: 1080 },
       },
     },

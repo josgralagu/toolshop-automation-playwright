@@ -20,6 +20,7 @@ export function generateValidUser() {
 		dateOfBirth: "1990-01-01",
 		address: "123 Test Street",
 		postcode: "12345",
+		houseNumber: "1A",
 		city: "Test City",
 		state: "Test State",
 		country: "MX",

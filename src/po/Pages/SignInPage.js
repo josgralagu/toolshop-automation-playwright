@@ -10,9 +10,11 @@ export class SignInPage {
 		this.page = page
 
 		// ==================== LOGIN FORM ELEMENTS ====================
-		this.emailField = page.locator('[data-test="email"]')
-		this.passwordField = page.locator('[data-test="password"]')
-		this.logInButton = page.locator("input.btnSubmit")
+		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
+		this.emailField = page.getByTestId("email")
+		this.passwordField = page.getByTestId("password")
+		// getByRole es preferido sobre selectores CSS como "input.btnSubmit"
+		this.logInButton = page.getByRole("button", { name: "Login" })
 	}
 
 	// ==================== NAVIGATION METHODS ====================
@@ -31,7 +33,6 @@ export class SignInPage {
 	 * @param {string} email - Email address to input
 	 */
 	async fillEmail(email) {
-		await this.emailField.waitFor({ state: "visible", timeout: 10000 })
 		await this.emailField.fill(email)
 	}
 
@@ -40,7 +41,6 @@ export class SignInPage {
 	 * @param {string} password - Password to input
 	 */
 	async fillPassword(password) {
-		await this.passwordField.waitFor({ state: "visible", timeout: 10000 })
 		await this.passwordField.fill(password)
 	}
 
@@ -48,7 +48,6 @@ export class SignInPage {
 	 * Click login button to submit form
 	 */
 	async clickLogInButton() {
-		await this.logInButton.waitFor({ state: "visible", timeout: 15000 })
 		await this.logInButton.click()
 	}
 

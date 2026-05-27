@@ -1,0 +1,3123 @@
+diff --git a/src/configs/playwrightConfigs/playwright.config.js b/src/configs/playwrightConfigs/playwright.config.js
+index 446531b..055bac4 100644
+--- a/src/configs/playwrightConfigs/playwright.config.js
++++ b/src/configs/playwrightConfigs/playwright.config.js
+@@ -22,7 +22,7 @@ export default defineConfig({
+   /* Fail the build on CI if you accidentally left test.only in the source code. */
+   forbidOnly: !!process.env.CI,
+   /* Number of retries for all tests */
+-  retries: 2,
++  retries: 1,
+   /* Number of workers for parallel execution */
+   workers: 2,
+ 
+@@ -64,7 +64,8 @@ export default defineConfig({
+       name: "chromium",
+       use: {
+         ...devices["Desktop Chrome"],
+-        headless: true,
++        headless: false,
++        actionTimeout: 15000,
+         viewport: { width: 1920, height: 1080 },
+       },
+     },
+diff --git a/src/configs/utils/commands.js b/src/configs/utils/commands.js
+index 7a5e076..93ca35f 100644
+--- a/src/configs/utils/commands.js
++++ b/src/configs/utils/commands.js
+@@ -1,9 +1,8 @@
+ // ====================================================================
+-// TEST COMMANDS & UTILITY FUNCTIONS - REFACTORED VERSION
++// TEST COMMANDS & UTILITY FUNCTIONS
+ // ====================================================================
+ // Reusable command functions for common test actions
+ // Centralizes complex logic and improves test maintainability
+-// Refactored to use improved Page Object Model structure
+ // ====================================================================
+ 
+ import { expect } from "@playwright/test"
+@@ -14,16 +13,13 @@ import { languageMap } from "./testData.js"
+ 
+ /**
+  * Update user profile phone number
+- * Navigates to profile page and updates the phone number field
+- *
+- * @param {Page} page - Playwright page object
+- * @param {string} phoneNumber - New phone number to set
++ * @param {import('@playwright/test').Page} page
++ * @param {string} phoneNumber
+  */
+ export async function updateProfilePhoneNumber(page, phoneNumber) {
+ 	const myAccountPage = pages("myaccount", page)
+ 	const profilePage = pages("profile", page)
+ 
+-	// Navigate to profile and update phone number
+ 	await myAccountPage.accessToProfile()
+ 	await profilePage.updatePhoneNumber(phoneNumber)
+ }
+@@ -31,29 +27,34 @@ export async function updateProfilePhoneNumber(page, phoneNumber) {
+ // ==================== PRODUCT NAVIGATION & SEARCH SECTION ====================
+ 
+ /**
+- * Navigate to products page and wait for initial load completion
+- * Primary entry point for product-related test scenarios
++ * Navigate to products page and wait for initial load completion.
++ *
++ * Corrección: se eliminó la llamada duplicada a waitForInitialProductsLoad().
++ * navigateToProductsPage() ya la invoca internamente.
++ *
++ * @param {import('@playwright/test').Page} page
+  */
+ export async function navigateToProductsPage(page) {
+ 	const productsPage = pages("products", page)
+ 	await productsPage.navigateToProductsPage()
+-	await productsPage.waitForInitialProductsLoad()
+ }
+ 
+ /**
+  * Navigate to product detail page for specified product
+- * Simplified workflow for quick product access
++ * @param {import('@playwright/test').Page} page
++ * @param {string} productName
+  */
+ export async function goToProductDetail(page, productName) {
+ 	const productsPage = pages("products", page)
+ 	await productsPage.navigateToProductsPage()
+-	await productsPage.waitForInitialProductsLoad()
+ 	await productsPage.searchAndSelectProduct(productName)
+ }
+ 
+ /**
+- * Search and select product from current products page
+- * Assumes user is already on products page
++ * Search and select product from current products page.
++ * Assumes user is already on products page.
++ * @param {import('@playwright/test').Page} page
++ * @param {string} productName
+  */
+ export async function searchAndSelectProduct(page, productName) {
+ 	const productsPage = pages("products", page)
+@@ -64,7 +65,9 @@ export async function searchAndSelectProduct(page, productName) {
+ 
+ /**
+  * Complete workflow to add product to cart with specified quantity
+- * Includes navigation, search, product selection, and cart addition
++ * @param {import('@playwright/test').Page} page
++ * @param {string} productName
++ * @param {number} quantity
+  */
+ export async function addProductToCart(page, productName, quantity = 1) {
+ 	const productsPage = pages("products", page)
+@@ -77,24 +80,18 @@ export async function addProductToCart(page, productName, quantity = 1) {
+ }
+ 
+ /**
+- * Add multiple products to cart and collect their data
+- * Iterates through product list, adds each to cart, and collects price information
++ * Add multiple products to cart and collect their data.
+  *
+- * @param {Page} page - Playwright page object
+- * @param {string[]} productNames - Array of product names to add
+- * @param {number} qtyPerProduct - Quantity of each product to add
+- * @returns {Array} Array of product objects with name, quantity, and price
+- */
+-export async function addProductsAndCollectData(
+-	page,
+-	productNames,
+-	qtyPerProduct
+-) {
++ * @param {import('@playwright/test').Page} page
++ * @param {string[]} productNames
++ * @param {number} qtyPerProduct
++ * @returns {Promise<Array<{name: string, qty: number, price: number}>>}
++ */
++export async function addProductsAndCollectData(page, productNames, qtyPerProduct) {
+ 	const detailPage = pages("productdetail", page)
+ 	const products = []
+ 
+-	for (let i = 0; i < productNames.length; i++) {
+-		const name = productNames[i]
++	for (const name of productNames) {
+ 		await addProductToCart(page, name, qtyPerProduct)
+ 		const price = await detailPage.getProductPrice()
+ 		products.push({ name, qty: qtyPerProduct, price })
+@@ -103,17 +100,22 @@ export async function addProductsAndCollectData(
+ }
+ 
+ /**
+- * Retrieve comprehensive cart data including products, quantities, and totals
+- * Navigates to cart page and collects all relevant cart information
++ * Retrieve comprehensive cart data including products, quantities, and totals.
+  *
+- * @param {Page} page - Playwright page object
+- * @returns {Object} Cart data object with names, quantities, prices, line totals, and cart total
++ * Corrección: se navega al cart usando page.goto() directamente en lugar de
++ * depender de detailPage.goToCartViaHeaderLink(), que asume que el usuario
++ * está en la última página de detalle. Esto hace la función más robusta
++ * e independiente del estado anterior.
++ *
++ * @param {import('@playwright/test').Page} page
++ * @returns {Promise<{names: string[], quantities: number[], prices: number[], lineTotals: number[], cartTotal: number}>}
+  */
+ export async function getCartData(page) {
+-	const detailPage = pages("productdetail", page)
+ 	const cartPage = pages("cart", page)
+ 
+-	await detailPage.goToCartViaHeaderLink()
++	await page.goto("https://practicesoftwaretesting.com/checkout", {
++		waitUntil: "domcontentloaded"
++	})
+ 	await cartPage.waitForCartLoad()
+ 
+ 	return {
+@@ -128,53 +130,32 @@ export async function getCartData(page) {
+ // ==================== CART CALCULATIONS & VALIDATIONS SECTION ====================
+ 
+ /**
+- * Calculate expected subtotal from product list
+- * Sums the product of price and quantity for all products
+- *
+- * @param {Array} products - Array of product objects with price and quantity
+- * @returns {number} Calculated subtotal
++ * @param {Array<{price: number, qty: number}>} products
++ * @returns {number}
+  */
+ export function calculateExpectedSubtotal(products) {
+ 	return products.reduce((sum, p) => sum + p.price * p.qty, 0)
+ }
+ 
+-/**
+- * Extract product names from product array
+- *
+- * @param {Array} products - Array of product objects
+- * @returns {string[]} Array of product names
+- */
++/** @param {Array<{name: string}>} products */
+ export function getProductNames(products) {
+ 	return products.map((p) => p.name)
+ }
+ 
+-/**
+- * Extract product quantities from product array
+- *
+- * @param {Array} products - Array of product objects
+- * @returns {number[]} Array of product quantities
+- */
++/** @param {Array<{qty: number}>} products */
+ export function getProductQuantities(products) {
+ 	return products.map((p) => p.qty)
+ }
+ 
+-/**
+- * Extract product prices from product array
+- *
+- * @param {Array} products - Array of product objects
+- * @returns {number[]} Array of product prices
+- */
++/** @param {Array<{price: number}>} products */
+ export function getProductPrices(products) {
+ 	return products.map((p) => p.price)
+ }
+ 
+ /**
+- * Calculate differences between actual and expected line totals
+- * Compares cart line totals with calculated expected values
+- *
+- * @param {number[]} cartLineTotals - Actual line totals from cart
+- * @param {Array} products - Array of product objects for expected calculation
+- * @returns {Array} Array of difference objects with index, actual, expected, and diff
++ * @param {number[]} cartLineTotals
++ * @param {Array<{price: number, qty: number}>} products
++ * @returns {Array<{index: number, actual: number, expected: number, diff: number}>}
+  */
+ export function getLineTotalsDifferences(cartLineTotals, products) {
+ 	return cartLineTotals.map((actual, i) => {
+@@ -183,33 +164,27 @@ export function getLineTotalsDifferences(cartLineTotals, products) {
+ 	})
+ }
+ 
+-/**
+- * Sum all line total differences
+- *
+- * @param {Array} differences - Array of difference objects from getLineTotalsDifferences
+- * @returns {number} Total sum of all differences
+- */
++/** @param {Array<{diff: number}>} differences */
+ export function sumLineTotalsDifferences(differences) {
+ 	return differences.reduce((sum, item) => sum + item.diff, 0)
+ }
+ 
+ /**
+- * Calculate total line totals error for cart validation
+- *
+- * @param {number[]} cartLineTotals - Actual line totals from cart
+- * @param {Array} products - Array of product objects for expected calculation
+- * @returns {number} Total error across all line items
++ * @param {number[]} cartLineTotals
++ * @param {Array<{price: number, qty: number}>} products
++ * @returns {number}
+  */
+ export function calculateLineTotalsError(cartLineTotals, products) {
+-	const differences = getLineTotalsDifferences(cartLineTotals, products)
+-	return sumLineTotalsDifferences(differences)
++	return sumLineTotalsDifferences(getLineTotalsDifferences(cartLineTotals, products))
+ }
+ 
+ // ==================== FILTER OPERATIONS SECTION ====================
+ 
+ /**
+- * Apply category filter using navigation menu
+- * Supported categories: 'Hand Tools', 'Power Tools', 'Other'
++ * Apply category filter using navigation menu.
++ * Supported: 'Hand Tools', 'Power Tools', 'Other'
++ * @param {import('@playwright/test').Page} page
++ * @param {string} categoryName
+  */
+ export async function filterByCategory(page, categoryName) {
+ 	const basePage = pages("base", page)
+@@ -229,7 +204,8 @@ export async function filterByCategory(page, categoryName) {
+ 
+ /**
+  * Apply subcategory filter using checkbox selection
+- * Includes wait for complete filter cycle
++ * @param {import('@playwright/test').Page} page
++ * @param {string} subcategoryName
+  */
+ export async function filterBySubcategory(page, subcategoryName) {
+ 	const productsPage = pages("products", page)
+@@ -240,7 +216,8 @@ export async function filterBySubcategory(page, subcategoryName) {
+ 
+ /**
+  * Remove specific subcategory filter
+- * Useful for test cleanup between scenarios
++ * @param {import('@playwright/test').Page} page
++ * @param {string} subcategoryName
+  */
+ export async function clearSubcategoryFilter(page, subcategoryName) {
+ 	const productsPage = pages("products", page)
+@@ -251,7 +228,8 @@ export async function clearSubcategoryFilter(page, subcategoryName) {
+ 
+ /**
+  * Apply brand filter by selecting checkbox
+- * Includes filter cycle completion wait
++ * @param {import('@playwright/test').Page} page
++ * @param {string} brandName
+  */
+ export async function filterByBrand(page, brandName) {
+ 	const productsPage = pages("products", page)
+@@ -260,7 +238,8 @@ export async function filterByBrand(page, brandName) {
+ 
+ /**
+  * Remove specific brand filter selection
+- * Useful for test cleanup between scenarios
++ * @param {import('@playwright/test').Page} page
++ * @param {string} brandName
+  */
+ export async function deselectBrand(page, brandName) {
+ 	const productsPage = pages("products", page)
+@@ -269,7 +248,7 @@ export async function deselectBrand(page, brandName) {
+ 
+ /**
+  * Activate eco-friendly product filter
+- * Filters products to show only eco-certified items
++ * @param {import('@playwright/test').Page} page
+  */
+ export async function filterByEcoFriendly(page) {
+ 	const productsPage = pages("products", page)
+@@ -277,8 +256,10 @@ export async function filterByEcoFriendly(page) {
+ }
+ 
+ /**
+- * Apply multiple filters in sequence
+- * Combines category and brand filtering
++ * Apply multiple filters in sequence (category + brand)
++ * @param {import('@playwright/test').Page} page
++ * @param {string} category
++ * @param {string} brand
+  */
+ export async function applyMultipleFilters(page, category, brand) {
+ 	await filterByCategory(page, category)
+@@ -288,15 +269,13 @@ export async function applyMultipleFilters(page, category, brand) {
+ // ==================== FILTER VALIDATIONS SECTION ====================
+ 
+ /**
+- * Basic validation for multiple filter combinations
+- * Verifies category and brand filters produce expected results
++ * @param {import('@playwright/test').Page} page
++ * @param {string} category
++ * @param {string} brand
++ * @param {string[]} keywords
++ * @returns {Promise<string[]>}
+  */
+-export async function validateMultipleFiltersBasic(
+-	page,
+-	category,
+-	brand,
+-	keywords
+-) {
++export async function validateMultipleFiltersBasic(page, category, brand, keywords) {
+ 	const productsPage = pages("products", page)
+ 	const errors = []
+ 
+@@ -308,11 +287,8 @@ export async function validateMultipleFiltersBasic(
+ 		return errors
+ 	}
+ 
+-	const firstProductName = await productsPage.productName
+-		.first()
+-		.textContent()
++	const firstProductName = await productsPage.productName.first().textContent()
+ 
+-	// Use the provided keywords parameter instead of dynamic import
+ 	const productMatchesCategory = keywords.some((keyword) =>
+ 		firstProductName.toLowerCase().includes(keyword.toLowerCase())
+ 	)
+@@ -327,53 +303,39 @@ export async function validateMultipleFiltersBasic(
+ }
+ 
+ /**
+- * Validate multiple filters and navigate to product details
+- * Combines validation with navigation workflow
++ * @param {import('@playwright/test').Page} page
++ * @param {string} category
++ * @param {string} brand
++ * @param {string[]} keywords
++ * @returns {Promise<string[]>}
+  */
+-export async function validateMultipleFiltersAndNavigate(
+-	page,
+-	category,
+-	brand,
+-	keywords
+-) {
+-	const errors = await validateMultipleFiltersBasic(
+-		page,
+-		category,
+-		brand,
+-		keywords
+-	)
++export async function validateMultipleFiltersAndNavigate(page, category, brand, keywords) {
++	const errors = await validateMultipleFiltersBasic(page, category, brand, keywords)
+ 	if (errors.length === 0) {
+-		await page.click("a.card")
++		await page.locator("a.card").first().click()
+ 		await page.waitForURL(/\/product\//, { timeout: 15000 })
+ 	}
+ 	return errors
+ }
+ 
+ /**
+- * Validate and navigate to product details with category-specific keywords
+- * Wrapper function for category-specific validation workflows
++ * @param {import('@playwright/test').Page} page
++ * @param {string} category
++ * @param {string} brand
++ * @param {Object} categoryKeywords
++ * @returns {Promise<string[]>}
+  */
+-export async function validateAndNavigateToProductDetails(
+-	page,
+-	category,
+-	brand,
+-	categoryKeywords
+-) {
++export async function validateAndNavigateToProductDetails(page, category, brand, categoryKeywords) {
+ 	const categoryKey =
+ 		category.charAt(0).toLowerCase() + category.slice(1).replace(/\s+/g, "")
+ 	const keywords = categoryKeywords[categoryKey]
+-	const errors = await validateMultipleFiltersAndNavigate(
+-		page,
+-		category,
+-		brand,
+-		keywords
+-	)
+-	return errors
++	return validateMultipleFiltersAndNavigate(page, category, brand, keywords)
+ }
+ 
+ /**
+  * Verify product details page loads correctly
+- * Validates product data availability and brand information
++ * @param {import('@playwright/test').Page} page
++ * @returns {Promise<string>} Brand name trimmed
+  */
+ export async function verifyProductDetails(page) {
+ 	const detailPage = pages("productdetail", page)
+@@ -386,15 +348,12 @@ export async function verifyProductDetails(page) {
+ 
+ /**
+  * Generic pagination validation across all result pages
+- * Executes validation function on each page of results
+- * @param {Function} validatePageFn - Function returning array of validation errors
+- * @param {number} maxPages - Safety limit to prevent infinite loops
+- */
+-export async function validateAcrossPagination(
+-	page,
+-	validatePageFn,
+-	maxPages = 10
+-) {
++ * @param {import('@playwright/test').Page} page
++ * @param {Function} validatePageFn
++ * @param {number} maxPages
++ * @returns {Promise<string[]>}
++ */
++export async function validateAcrossPagination(page, validatePageFn, maxPages = 10) {
+ 	const productsPage = pages("products", page)
+ 	const allErrors = []
+ 	let currentPage = 1
+@@ -413,58 +372,50 @@ export async function validateAcrossPagination(
+ 	}
+ 
+ 	if (currentPage >= maxPages) {
+-		allErrors.push(
+-			`Reached maximum page limit (${maxPages}) - possible infinite loop`
+-		)
++		allErrors.push(`Reached maximum page limit (${maxPages}) - possible infinite loop`)
+ 	}
+ 
+ 	return allErrors
+ }
+ 
+ /**
+- * Validate no out-of-stock products across all pagination pages
+- * Comprehensive stock availability check for filtered results
++ * @param {import('@playwright/test').Page} page
++ * @returns {Promise<string[]>}
+  */
+-// eslint-disable-next-line require-await
+ export async function validateNoOutOfStockAcrossPagination(page) {
+ 	return validateAcrossPagination(page, async (productsPage) => {
+ 		const hasOutOfStock = await productsPage.hasOutOfStockProducts()
+-		if (hasOutOfStock) {
+-			return ["Found out-of-stock products on current page"]
+-		}
+-		return []
++		return hasOutOfStock ? ["Found out-of-stock products on current page"] : []
+ 	})
+ }
+ 
+ /**
+- * Validate product names contain expected keywords across pagination
+- * Ensures filtered results match category or subcategory criteria
++ * @param {import('@playwright/test').Page} page
++ * @param {string[]} keywords
++ * @returns {Promise<string[]>}
+  */
+-// eslint-disable-next-line require-await
+ export async function validateKeywordsAcrossPagination(page, keywords) {
+ 	return validateAcrossPagination(page, async (productsPage) => {
+ 		const invalidNames = await productsPage.getInvalidProductNames(keywords)
+-		if (invalidNames.length > 0) {
+-			return [
+-				`Found products without keywords: ${invalidNames.join(", ")}`
+-			]
+-		}
+-		return []
++		return invalidNames.length > 0
++			? [`Found products without keywords: ${invalidNames.join(", ")}`]
++			: []
+ 	})
+ }
+ 
+ /**
+- * Validate category keyword matching across pagination
+- * Wrapper function for category-specific keyword validation
++ * @param {import('@playwright/test').Page} page
++ * @param {string[]} keywords
++ * @returns {Promise<string[]>}
+  */
+-// eslint-disable-next-line require-await
+ export async function validateCategoryKeywords(page, keywords) {
+ 	return validateKeywordsAcrossPagination(page, keywords)
+ }
+ 
+ /**
+- * Comprehensive brand filter validation
+- * Checks product availability and stock status for brand filters
++ * @param {import('@playwright/test').Page} page
++ * @param {string} brandName
++ * @returns {Promise<string[]>}
+  */
+ export async function validateBrandProducts(page, brandName) {
+ 	const productsPage = pages("products", page)
+@@ -478,27 +429,23 @@ export async function validateBrandProducts(page, brandName) {
+ 
+ 	const outOfStockErrors = await validateNoOutOfStockAcrossPagination(page)
+ 	errors.push(...outOfStockErrors)
+-
+ 	return errors
+ }
+ 
+ /**
+- * Subcategory filter validation with keyword matching
+- * Handles both successful results and no-results scenarios
++ * @param {import('@playwright/test').Page} page
++ * @param {string} subcategoryName
++ * @param {string[]} keywords
++ * @returns {Promise<string[]>}
+  */
+-export async function validateSubcategoryResults(
+-	page,
+-	subcategoryName,
+-	keywords
+-) {
++export async function validateSubcategoryResults(page, subcategoryName, keywords) {
+ 	const productsPage = pages("products", page)
+ 	const errors = []
+ 
+ 	const hasProducts = await productsPage.hasProductsVisible()
+ 
+ 	if (!hasProducts) {
+-		const noResultsVisible =
+-			await productsPage.filterComponent.hasNoResults()
++		const noResultsVisible = await productsPage.filterComponent.hasNoResults()
+ 		if (!noResultsVisible) {
+ 			errors.push(
+ 				`No products found for subcategory "${subcategoryName}" but no "no results" message visible`
+@@ -509,43 +456,26 @@ export async function validateSubcategoryResults(
+ 
+ 	const keywordErrors = await validateKeywordsAcrossPagination(page, keywords)
+ 	errors.push(...keywordErrors)
+-
+ 	return errors
+ }
+ 
+ /**
+- * Validate eco-friendly badge presence across all pagination pages
+- * Ensures eco filter shows only certified products
++ * @param {import('@playwright/test').Page} page
++ * @returns {Promise<string[]>}
+  */
+-// eslint-disable-next-line require-await
+ export async function validateEcoBadgesAcrossPagination(page) {
+ 	return validateAcrossPagination(page, async (productsPage) => {
+ 		const allEco = await productsPage.validateCurrentPageEcoBadges()
+-		if (!allEco) {
+-			return ["Not all products have ECO badge"]
+-		}
+-		return []
++		return allEco ? [] : ["Not all products have ECO badge"]
+ 	})
+ }
+ 
+ // ==================== LANGUAGE & CONTACT ACTIONS SECTION ====================
+ 
+ /**
+- * Change contact page language using dropdown selector
+- * @param {string} languageCode - Two-letter language code (DE, EN, ES, FR, NL, TR)
+- */
+-export async function changeLanguage(page, languageCode) {
+-	const basePage = pages("base", page)
+-	await basePage.navigationBar.changeLanguage(languageCode)
+-}
+-
+-/**
+- * Change language on contact page and retrieve corresponding translations
+- * Combines language switching with translation data retrieval
+- *
+- * @param {Page} page - Playwright page object
+- * @param {string} langCode - Two-letter language code (DE, EN, ES, FR, NL, TR)
+- * @returns {Object} Translation object for the specified language
++ * @param {import('@playwright/test').Page} page
++ * @param {string} langCode
++ * @returns {Promise<Object>} Translation object for the specified language
+  */
+ export async function changeLanguageAndGetTranslations(page, langCode) {
+ 	const contactPage = pages("contact", page)
+@@ -556,53 +486,28 @@ export async function changeLanguageAndGetTranslations(page, langCode) {
+ // ==================== CONTACT FORM VALIDATIONS SECTION ====================
+ 
+ /**
+- * Validate contact form label translations
+- * Comprehensive check of all form field labels against expected translations
++ * @param {import('@playwright/test').Page} page
++ * @param {Object} translations
++ * @returns {Promise<string[]>}
+  */
+ export async function validateContactFormLabels(page, translations) {
+ 	const contactPage = pages("contact", page)
+ 	const errors = []
+ 
+ 	const labelChecks = [
+-		{
+-			key: "firstName",
+-			locator: contactPage.firstNameLabel,
+-			expected: translations.firstNameField
+-		},
+-		{
+-			key: "lastName",
+-			locator: contactPage.lastNameLabel,
+-			expected: translations.lastNameField
+-		},
+-		{
+-			key: "email",
+-			locator: contactPage.emailLabel,
+-			expected: translations.emailField
+-		},
+-		{
+-			key: "subject",
+-			locator: contactPage.subjectLabel,
+-			expected: translations.subjectField
+-		},
+-		{
+-			key: "message",
+-			locator: contactPage.messageLabel,
+-			expected: translations.messageField
+-		},
+-		{
+-			key: "attachment",
+-			locator: contactPage.attachmentLabel,
+-			expected: translations.attachmentLabel
+-		}
++		{ key: "firstName", locator: contactPage.firstNameLabel, expected: translations.firstNameField },
++		{ key: "lastName", locator: contactPage.lastNameLabel, expected: translations.lastNameField },
++		{ key: "email", locator: contactPage.emailLabel, expected: translations.emailField },
++		{ key: "subject", locator: contactPage.subjectLabel, expected: translations.subjectField },
++		{ key: "message", locator: contactPage.messageLabel, expected: translations.messageField },
++		{ key: "attachment", locator: contactPage.attachmentLabel, expected: translations.attachmentLabel }
+ 	]
+ 
+ 	for (const { key, locator, expected } of labelChecks) {
+ 		try {
+ 			const actual = await locator.textContent()
+ 			if (actual.trim() !== expected) {
+-				errors.push(
+-					`Label ${key}: expected "${expected}", got "${actual}"`
+-				)
++				errors.push(`Label ${key}: expected "${expected}", got "${actual.trim()}"`)
+ 			}
+ 		} catch {
+ 			errors.push(`Label ${key}: element not found`)
+@@ -613,47 +518,36 @@ export async function validateContactFormLabels(page, translations) {
+ }
+ 
+ /**
+- * Validate contact form placeholder translations
+- * Checks both input placeholders and select option text
++ * @param {import('@playwright/test').Page} page
++ * @param {Object} translations
++ * @returns {Promise<string[]>}
+  */
+ export async function validateContactFormPlaceholders(page, translations) {
+ 	const errors = []
+ 
+-	// Input field placeholders validation
++	// getByTestId requiere testIdAttribute: 'data-test' en playwright.config.js
+ 	const inputPlaceholders = [
+-		{
+-			selector: '[data-test="first-name"]',
+-			expected: translations.firstNamePlaceholder
+-		},
+-		{
+-			selector: '[data-test="last-name"]',
+-			expected: translations.lastNamePlaceholder
+-		},
+-		{
+-			selector: '[data-test="email"]',
+-			expected: translations.emailPlaceholder
+-		}
++		{ locator: page.getByTestId("first-name"), key: "first-name", expected: translations.firstNamePlaceholder },
++		{ locator: page.getByTestId("last-name"), key: "last-name", expected: translations.lastNamePlaceholder },
++		{ locator: page.getByTestId("email"), key: "email", expected: translations.emailPlaceholder }
+ 	]
+ 
+-	for (const { selector, expected } of inputPlaceholders) {
++	for (const { locator, key, expected } of inputPlaceholders) {
+ 		try {
+-			const actual = await page
+-				.locator(selector)
+-				.getAttribute("placeholder")
++			const actual = await locator.getAttribute("placeholder")
+ 			if ((actual || "").trim() !== expected) {
+-				errors.push(
+-					`Input placeholder ${selector}: expected "${expected}", got "${actual}"`
+-				)
++				errors.push(`Input placeholder [${key}]: expected "${expected}", got "${actual}"`)
+ 			}
+ 		} catch {
+-			errors.push(`Input placeholder ${selector}: element not found`)
++			errors.push(`Input placeholder [${key}]: element not found`)
+ 		}
+ 	}
+ 
+ 	// Select dropdown placeholder validation
+ 	try {
+ 		const selectedOption = await page
+-			.locator('[data-test="subject"] option[selected]')
++			.getByTestId("subject")
++			.locator("option[selected]")
+ 			.textContent()
+ 		if ((selectedOption || "").trim() !== translations.subjectPlaceholder) {
+ 			errors.push(
+@@ -668,18 +562,28 @@ export async function validateContactFormPlaceholders(page, translations) {
+ }
+ 
+ /**
+- * Validate contact form submit button translation
+- * Checks button value attribute against expected translation
++ * Validate contact form submit button translation.
++ *
++ * El elemento es <input type="submit" value="Senden">, no un <button>.
++ * Un <input type="submit"> muestra su texto a través del atributo "value",
++ * no de textContent() (que siempre retorna "" para inputs).
++ * Se usa inputValue() que es el método correcto de Playwright para leer
++ * el valor de cualquier elemento input.
++ *
++ * @param {import('@playwright/test').Page} page
++ * @param {Object} translations
++ * @returns {Promise<string[]>}
+  */
+ export async function validateContactSubmitButton(page, translations) {
+ 	const contactPage = pages("contact", page)
+ 	const errors = []
+ 
+ 	try {
+-		const actualValue = await contactPage.submitButton.getAttribute("value")
+-		if (actualValue !== translations.submitButton) {
++		// inputValue() lee el atributo "value" del <input type="submit">
++		const actualText = (await contactPage.submitButton.inputValue()).trim()
++		if (actualText !== translations.submitButton) {
+ 			errors.push(
+-				`Submit button: expected "${translations.submitButton}", got "${actualValue}"`
++				`Submit button: expected "${translations.submitButton}", got "${actualText}"`
+ 			)
+ 		}
+ 	} catch {
+@@ -690,35 +594,21 @@ export async function validateContactSubmitButton(page, translations) {
+ }
+ 
+ /**
+- * Validate navigation elements translations on contact page
+- * Checks main heading and all navigation links against expected translations
+- *
+- * @param {Page} page - Playwright page object
+- * @param {Object} translations - Translation object with navigation text
++ * @param {import('@playwright/test').Page} page
++ * @param {Object} translations
+  */
+ export async function validateNavigationElements(page, translations) {
+ 	const contactPage = pages("contact", page)
+ 	await expect(contactPage.mainHeading).toHaveText(translations.mainHeading)
+-	await expect(contactPage.navigationBar.homeLink).toHaveText(
+-		translations.homeLink
+-	)
+-	await expect(contactPage.navigationBar.categoriesLink).toHaveText(
+-		translations.categoriesLink
+-	)
+-	await expect(contactPage.navigationBar.contactLink).toHaveText(
+-		translations.contactLink
+-	)
+-	await expect(contactPage.navigationBar.signInLink).toHaveText(
+-		translations.signInLink
+-	)
++	await expect(contactPage.navigationBar.homeLink).toHaveText(translations.homeLink)
++	await expect(contactPage.navigationBar.categoriesLink).toHaveText(translations.categoriesLink)
++	await expect(contactPage.navigationBar.contactLink).toHaveText(translations.contactLink)
++	await expect(contactPage.navigationBar.signInLink).toHaveText(translations.signInLink)
+ }
+ 
+ /**
+- * Validate warning and info text translations on contact page
+- * Uses substring matching for dynamic content validation
+- *
+- * @param {Page} page - Playwright page object
+- * @param {Object} translations - Translation object with warning and info text
++ * @param {import('@playwright/test').Page} page
++ * @param {Object} translations
+  */
+ export async function validateLabelsAndText(page, translations) {
+ 	const contactPage = pages("contact", page)
+@@ -732,19 +622,20 @@ export async function validateLabelsAndText(page, translations) {
+ }
+ 
+ /**
+- * Comprehensive contact form translation validation
+- * Combines label, placeholder, and button translation checks
++ * Comprehensive contact form translation validation.
++ *
++ * Mejora: las tres validaciones se ejecutan en paralelo con Promise.all()
++ * en lugar de secuencialmente, reduciendo el tiempo total del test.
+  *
+- * @param {Page} page - Playwright page object
+- * @param {Object} translations - Complete translation object for contact form
+- * @returns {Array} Combined array of all translation validation errors
++ * @param {import('@playwright/test').Page} page
++ * @param {Object} translations
++ * @returns {Promise<string[]>}
+  */
+ export async function validateFormTranslations(page, translations) {
+-	const labelErrors = await validateContactFormLabels(page, translations)
+-	const placeholderErrors = await validateContactFormPlaceholders(
+-		page,
+-		translations
+-	)
+-	const buttonErrors = await validateContactSubmitButton(page, translations)
++	const [labelErrors, placeholderErrors, buttonErrors] = await Promise.all([
++		validateContactFormLabels(page, translations),
++		validateContactFormPlaceholders(page, translations),
++		validateContactSubmitButton(page, translations)
++	])
+ 	return [...labelErrors, ...placeholderErrors, ...buttonErrors]
+ }
+diff --git a/src/configs/utils/testData.js b/src/configs/utils/testData.js
+index aa81063..658329d 100644
+--- a/src/configs/utils/testData.js
++++ b/src/configs/utils/testData.js
+@@ -20,6 +20,7 @@ export function generateValidUser() {
+ 		dateOfBirth: "1990-01-01",
+ 		address: "123 Test Street",
+ 		postcode: "12345",
++		houseNumber: "1A",
+ 		city: "Test City",
+ 		state: "Test State",
+ 		country: "MX",
+diff --git a/src/po/Components/FilterComponent.js b/src/po/Components/FilterComponent.js
+index 788b661..fba0106 100644
+--- a/src/po/Components/FilterComponent.js
++++ b/src/po/Components/FilterComponent.js
+@@ -1,174 +1,152 @@
+ // ====================================================================
+ // FILTER COMPONENT
+ // ====================================================================
+-// Reusable filter functionality component
+-// Implements DRY principle by centralizing filter-related logic
+-// ====================================================================
+ 
+ export class FilterComponent {
+ 	constructor(page) {
+ 		this.page = page
+ 
+-		// ==================== FILTER ELEMENTS ====================
+-		this.ecoFilter = page.locator('input[data-test="eco-friendly-filter"]')
+-		this.brandCheckbox = (brandName) =>
+-			page.locator(
+-				`.checkbox label:has-text("${brandName}") input[type="checkbox"]`
+-			)
++		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
++		this.ecoFilter = page.getByTestId("eco-friendly-filter")
++
++		// getByLabel asocia el checkbox con su label accesible,
++		// reemplazando el selector CSS frágil original.
++		this.brandCheckbox = (brandName) => page.getByLabel(brandName)
+ 
+-		// ==================== FILTER STATUS ELEMENTS ====================
+-		this.filterStarted = page.locator('[data-test="filter_started"]')
++		// filter_started / filter_completed solo aparecen con filtros BRAND y SUBCATEGORÍA.
++		// Eco-friendly y categoría (nav) usan waitForProductsApiResponse.
+ 		this.filterCompleted = page.locator('[data-test="filter_completed"]')
+-		this.noResultsMessage = page.locator('[data-test="no-results"]')
++		this.noResultsMessage = page.getByTestId("no-results")
+ 	}
+ 
+-	// ==================== BRAND FILTER METHODS ====================
++	// ==================== BRAND FILTER ====================
+ 
+ 	/**
+-	 * Select brand filter by name
+-	 * @param {string} brandName - Brand name to filter by
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
++	 * Select brand filter.
++	 * Brand filters emit filter_completed — waitForFilterCycle is used.
++	 * check() auto-waits for visibility — no explicit waitFor needed.
++	 * @param {string} brandName
+ 	 */
+-	async selectBrandByName(brandName, timeout = 10000) {
+-		await this.brandCheckbox(brandName).waitFor({
+-			state: "visible",
+-			timeout
+-		})
++	async selectBrandByName(brandName) {
+ 		await this.brandCheckbox(brandName).check()
+ 		await this.waitForFilterCycle()
+ 	}
+ 
+ 	/**
+-	 * Deselect brand filter by name
+-	 * @param {string} brandName - Brand name to deselect
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
++	 * Deselect brand filter.
++	 * @param {string} brandName
+ 	 */
+-	async deselectBrandByName(brandName, timeout = 10000) {
+-		await this.brandCheckbox(brandName).waitFor({
+-			state: "visible",
+-			timeout
+-		})
++	async deselectBrandByName(brandName) {
+ 		await this.brandCheckbox(brandName).uncheck()
+ 		await this.waitForFilterCycle()
+ 	}
+ 
+ 	/**
+-	 * Check if brand filter is selected
+-	 * @param {string} brandName - Brand name to check
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {boolean} True if brand filter is checked
++	 * Check if a brand filter checkbox is selected.
++	 * isChecked() auto-waits for visibility.
++	 * @param {string} brandName
++	 * @returns {Promise<boolean>}
+ 	 */
+-	async isBrandSelected(brandName, timeout = 10000) {
+-		await this.brandCheckbox(brandName).waitFor({
+-			state: "visible",
+-			timeout
+-		})
++	async isBrandSelected(brandName) {
+ 		return await this.brandCheckbox(brandName).isChecked()
+ 	}
+ 
+-	// ==================== ECO FILTER METHODS ====================
++	// ==================== ECO FILTER ====================
+ 
+ 	/**
+-	 * Activate eco-friendly filter
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
++	 * Activate eco-friendly filter.
++	 * Eco filter does NOT emit filter_completed — API response is intercepted instead.
++	 * check() auto-waits for visibility — no explicit waitFor needed.
++	 * @param {number} timeout
+ 	 */
+-	async clickEcoFriendlyFilter(timeout = 10000) {
+-		await this.ecoFilter.waitFor({ state: "visible", timeout })
++	async clickEcoFriendlyFilter(timeout = 15000) {
++		const responsePromise = this.waitForProductsApiResponse(timeout)
+ 		await this.ecoFilter.check()
+-		await this.waitForFilterCycle()
++		await responsePromise
++		await this.waitForFilterResults(timeout)
+ 	}
+ 
+ 	/**
+-	 * Deactivate eco-friendly filter
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
++	 * Deactivate eco-friendly filter.
++	 * @param {number} timeout
+ 	 */
+-	async unclickEcoFriendlyFilter(timeout = 10000) {
+-		await this.ecoFilter.waitFor({ state: "visible", timeout })
++	async unclickEcoFriendlyFilter(timeout = 15000) {
++		const responsePromise = this.waitForProductsApiResponse(timeout)
+ 		await this.ecoFilter.uncheck()
+-		await this.waitForFilterCycle()
++		await responsePromise
++		await this.waitForFilterResults(timeout)
+ 	}
+ 
+ 	/**
+-	 * Check if eco filter is selected
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {boolean} True if eco filter is checked
++	 * Check if eco filter is selected.
++	 * isChecked() auto-waits for visibility.
++	 * @returns {Promise<boolean>}
+ 	 */
+-	async isEcoFilterSelected(timeout = 10000) {
+-		await this.ecoFilter.waitFor({ state: "visible", timeout })
++	async isEcoFilterSelected() {
+ 		return await this.ecoFilter.isChecked()
+ 	}
+ 
+-	// ==================== SUBCATEGORY FILTER METHODS ====================
++	// ==================== SUBCATEGORY FILTER ====================
+ 
+ 	/**
+-	 * Select subcategory filter by exact name match
+-	 * @param {string} subcategoryName - Subcategory name to filter by
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
++	 * Select subcategory filter by exact label match.
++	 * Subcategory filters emit filter_completed — waitForFilterCycle is used.
++	 * click() auto-waits for visibility — no explicit waitFor needed.
++	 * @param {string} subcategoryName
+ 	 */
+-	async clickSubcategoryCheckbox(subcategoryName, timeout = 10000) {
+-		const checkboxLabel = this.page.locator(
+-			`.checkbox label:text-is("${subcategoryName}")`
+-		)
+-		await checkboxLabel.waitFor({ state: "visible", timeout })
+-		await checkboxLabel.click()
++	async clickSubcategoryCheckbox(subcategoryName) {
++		await this.page.getByLabel(subcategoryName, { exact: true }).click()
++		await this.waitForFilterCycle()
+ 	}
+ 
++	// ==================== WAIT METHODS ====================
++
+ 	/**
+-	 * Check if subcategory filter is selected
+-	 * @param {string} subcategoryName - Subcategory name to check
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {boolean} True if subcategory filter is selected
++	 * Wait for filter cycle to complete via the filter_completed DOM signal.
++	 * Used by BRAND and SUBCATEGORY filters.
++	 * @param {number} timeout
+ 	 */
+-	async isSubcategorySelected(subcategoryName, timeout = 10000) {
+-		const checkbox = this.page.locator(
+-			`.checkbox label:text-is("${subcategoryName}") input[type="checkbox"]`
+-		)
+-		await checkbox.waitFor({ state: "visible", timeout })
+-		return await checkbox.isChecked()
++	async waitForFilterCycle(timeout = 15000) {
++		await this.filterCompleted.waitFor({ state: "attached", timeout })
+ 	}
+ 
+-	// ==================== FILTER WAIT METHODS ====================
+-
+ 	/**
+-	 * Wait for filter operation to complete
+-	 * @param {number} startedTimeout - Timeout for filter started (default: 5000)
+-	 * @param {number} completedTimeout - Timeout for filter completed (default: 15000)
++	 * Register a waitForResponse promise for the products API.
++	 * Must be called BEFORE the action that triggers the request.
++	 * Used by ECO and CATEGORY filters that don't emit filter_completed.
++	 * @param {number} timeout
++	 * @returns {Promise<import('@playwright/test').Response>}
+ 	 */
+-	async waitForFilterCycle(startedTimeout = 5000, completedTimeout = 15000) {
+-		await this.filterStarted.waitFor({
+-			state: "attached",
+-			timeout: startedTimeout
+-		})
+-		await this.filterCompleted.waitFor({
+-			state: "attached",
+-			timeout: completedTimeout
+-		})
++	waitForProductsApiResponse(timeout = 15000) {
++		return this.page.waitForResponse(
++			(response) =>
++				response.url().includes("/products") && response.status() === 200,
++			{ timeout }
++		)
+ 	}
+ 
+ 	/**
+-	 * Wait for filter results to load
+-	 * @param {number} timeout - Timeout in milliseconds (default: 15000)
++	 * Wait for filter results to appear in the DOM.
++	 * Checks for at least one product-name OR a no-results message.
++	 * @param {number} timeout
+ 	 */
+ 	async waitForFilterResults(timeout = 15000) {
+ 		await this.page.waitForFunction(
+ 			() => {
+-				const hasProducts =
+-					document.querySelector('h5[data-test="product-name"]') !==
+-					null
+-				const hasNoResults =
+-					document.querySelector('[data-test="no-results"]') !== null
++				const hasProducts = document.querySelector('[data-test="product-name"]') !== null
++				const hasNoResults = document.querySelector('[data-test="no-results"]') !== null
+ 				return hasProducts || hasNoResults
+ 			},
+ 			{ timeout }
+ 		)
+ 	}
+ 
+-	// ==================== FILTER STATUS METHODS ====================
++	// ==================== STATUS ====================
+ 
+ 	/**
+-	 * Check if no results message is displayed
+-	 * @param {number} timeout - Timeout in milliseconds (default: 5000)
+-	 * @returns {boolean} True if no results message is visible
++	 * Check if no-results message is visible.
++	 * @param {number} timeout
++	 * @returns {Promise<boolean>}
+ 	 */
+ 	async hasNoResults(timeout = 5000) {
+ 		try {
+@@ -179,42 +157,26 @@ export class FilterComponent {
+ 		}
+ 	}
+ 
+-	/**
+-	 * Check if filter is currently processing
+-	 * @param {number} timeout - Timeout in milliseconds (default: 1000)
+-	 * @returns {boolean} True if filter is processing
+-	 */
+-	async isFilterProcessing(timeout = 1000) {
+-		try {
+-			await this.filterStarted.waitFor({ state: "attached", timeout })
+-			return true
+-		} catch {
+-			return false
+-		}
+-	}
+-
+-	// ==================== FILTER CLEARING METHODS ====================
++	// ==================== CLEARING ====================
+ 
+ 	/**
+-	 * Clear all brand filters
+-	 * @param {string[]} brands - Array of brand names to clear
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
++	 * Deselect all active brand filters.
++	 * @param {string[]} brands
+ 	 */
+-	async clearAllBrandFilters(brands, timeout = 10000) {
++	async clearAllBrandFilters(brands) {
+ 		for (const brand of brands) {
+-			if (await this.isBrandSelected(brand, timeout)) {
+-				await this.deselectBrandByName(brand, timeout)
++			if (await this.isBrandSelected(brand)) {
++				await this.deselectBrandByName(brand)
+ 			}
+ 		}
+ 	}
+ 
+ 	/**
+-	 * Clear eco filter if active
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
++	 * Deactivate eco filter if currently active.
+ 	 */
+-	async clearEcoFilter(timeout = 10000) {
+-		if (await this.isEcoFilterSelected(timeout)) {
+-			await this.unclickEcoFriendlyFilter(timeout)
++	async clearEcoFilter() {
++		if (await this.isEcoFilterSelected()) {
++			await this.unclickEcoFriendlyFilter()
+ 		}
+ 	}
+ }
+diff --git a/src/po/Components/PaginationComponent.js b/src/po/Components/PaginationComponent.js
+index 89ba92f..765cb5d 100644
+--- a/src/po/Components/PaginationComponent.js
++++ b/src/po/Components/PaginationComponent.js
+@@ -1,34 +1,26 @@
+ // ====================================================================
+ // PAGINATION COMPONENT
+ // ====================================================================
+-// Reusable pagination functionality component
+-// Implements DRY principle by centralizing pagination-related logic
+-// ====================================================================
+ 
+ export class PaginationComponent {
+ 	constructor(page) {
+ 		this.page = page
+ 
+-		// ==================== PAGINATION ELEMENTS ====================
+-		this.paginationNextButton = page.locator('a[aria-label="Next"]')
+-		this.paginationPreviousButton = page.locator('a[aria-label="Previous"]')
++		// getByRole con name es preferido para links de navegación con aria-label
++		this.paginationNextButton = page.getByRole("link", { name: "Next" })
++		this.paginationPreviousButton = page.getByRole("link", { name: "Previous" })
+ 		this.paginationContainer = page.locator(".pagination")
+-		this.pageNumberLinks = page.locator(
+-			".pagination .page-item:not(.previous):not(.next) .page-link"
+-		)
+ 	}
+ 
+-	// ==================== PAGINATION NAVIGATION METHODS ====================
++	// ==================== NAVIGATION ====================
+ 
+ 	/**
+-	 * Check if next page is available
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {boolean} True if next page exists and is enabled
++	 * Check if next page is available and enabled.
++	 * @param {number} timeout
++	 * @returns {Promise<boolean>}
+ 	 */
+ 	async hasNextPage(timeout = 10000) {
+-		const buttonCount = await this.paginationNextButton.count()
+-		if (buttonCount === 0) return false
+-
++		if ((await this.paginationNextButton.count()) === 0) return false
+ 		await this.paginationNextButton.waitFor({ state: "visible", timeout })
+ 		const isDisabled = await this.paginationNextButton.evaluate((el) =>
+ 			el.closest("li")?.classList.contains("disabled")
+@@ -37,231 +29,80 @@ export class PaginationComponent {
+ 	}
+ 
+ 	/**
+-	 * Check if previous page is available
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {boolean} True if previous page exists and is enabled
+-	 */
+-	async hasPreviousPage(timeout = 10000) {
+-		const buttonCount = await this.paginationPreviousButton.count()
+-		if (buttonCount === 0) return false
+-
+-		await this.paginationPreviousButton.waitFor({
+-			state: "visible",
+-			timeout
+-		})
+-		const isDisabled = await this.paginationPreviousButton.evaluate((el) =>
+-			el.closest("li")?.classList.contains("disabled")
+-		)
+-		return !isDisabled
+-	}
+-
+-	/**
+-	 * Navigate to next page of results
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @throws {Error} If next page button is disabled
++	 * Navigate to next page.
++	 * @param {number} timeout
++	 * @throws {Error} if next page is disabled
+ 	 */
+ 	async clickNextPage(timeout = 10000) {
+-		const canNavigate = await this.hasNextPage(timeout)
+-		if (!canNavigate) {
++		if (!(await this.hasNextPage(timeout))) {
+ 			throw new Error("Next page button is disabled - cannot navigate")
+ 		}
+-
+ 		await this.paginationNextButton.click()
+ 	}
+ 
+ 	/**
+-	 * Navigate to previous page of results
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @throws {Error} If previous page button is disabled
+-	 */
+-	async clickPreviousPage(timeout = 10000) {
+-		const canNavigate = await this.hasPreviousPage(timeout)
+-		if (!canNavigate) {
+-			throw new Error(
+-				"Previous page button is disabled - cannot navigate"
+-			)
+-		}
+-
+-		await this.paginationPreviousButton.click()
+-	}
+-
+-	/**
+-	 * Navigate to specific page number
+-	 * @param {number} pageNumber - Page number to navigate to
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async clickPageNumber(pageNumber, timeout = 10000) {
+-		const pageLink = this.page.locator(
+-			`.pagination .page-link:has-text("${pageNumber}")`
+-		)
+-		await pageLink.waitFor({ state: "visible", timeout })
+-		await pageLink.click()
+-	}
+-
+-	// ==================== PAGINATION INFORMATION METHODS ====================
+-
+-	/**
+-	 * Get the number of pagination pages available
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {number} Count of pagination pages (excluding Previous and Next buttons)
++	 * Get total number of page items (excluding Prev/Next buttons).
++	 * @param {number} timeout
++	 * @returns {Promise<number>}
+ 	 */
+ 	async getPageCount(timeout = 10000) {
+ 		await this.paginationContainer.waitFor({ state: "visible", timeout })
+-		const paginationItems = await this.page
+-			.locator(".pagination .page-item")
+-			.count()
+-		return paginationItems - 2 // Exclude "Previous" and "Next" buttons
++		const total = await this.page.locator(".pagination .page-item").count()
++		return total - 2
+ 	}
+ 
+ 	/**
+-	 * Get current page number
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {number} Current page number
++	 * Get current active page number.
++	 * @param {number} timeout
++	 * @returns {Promise<number>}
+ 	 */
+ 	async getCurrentPageNumber(timeout = 10000) {
+ 		await this.paginationContainer.waitFor({ state: "visible", timeout })
+-		const activePage = this.page.locator(
+-			".pagination .page-item.active .page-link"
+-		)
+-
+-		if ((await activePage.count()) === 0) {
+-			return 1 // Default to page 1 if no active page found
+-		}
+-
+-		const pageText = await activePage.textContent()
+-		return parseInt(pageText, 10)
+-	}
+-
+-	/**
+-	 * Get all available page numbers
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {number[]} Array of available page numbers
+-	 */
+-	async getAvailablePageNumbers(timeout = 10000) {
+-		await this.paginationContainer.waitFor({ state: "visible", timeout })
+-		const pageCount = await this.pageNumberLinks.count()
+-		const pageNumbers = []
+-
+-		for (let i = 0; i < pageCount; i++) {
+-			const pageText = await this.pageNumberLinks.nth(i).textContent()
+-			pageNumbers.push(parseInt(pageText, 10))
++		const activePage = this.page.locator(".pagination .page-item.active .page-link")
++		if ((await activePage.count()) === 0) return 1
++		return parseInt(await activePage.textContent(), 10)
+ 	}
+ 
+-		return pageNumbers
+-	}
+-
+-	// ==================== PAGINATION VALIDATION METHODS ====================
+-
+ 	/**
+-	 * Check if pagination is visible
+-	 * @param {number} timeout - Timeout in milliseconds (default: 3000)
+-	 * @returns {boolean} True if pagination is visible
++	 * Check if pagination container is visible.
++	 * @param {number} timeout
++	 * @returns {Promise<boolean>}
+ 	 */
+ 	async isPaginationVisible(timeout = 3000) {
+ 		try {
+-			await this.paginationContainer.waitFor({
+-				state: "visible",
+-				timeout
+-			})
++			await this.paginationContainer.waitFor({ state: "visible", timeout })
+ 			return true
+ 		} catch {
+ 			return false
+ 		}
+ 	}
+ 
+-	/**
+-	 * Check if specific page number is active
+-	 * @param {number} pageNumber - Page number to check
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {boolean} True if the specified page is active
+-	 */
+-	async isPageActive(pageNumber, timeout = 10000) {
+-		await this.paginationContainer.waitFor({ state: "visible", timeout })
+-		const activePage = this.page.locator(
+-			".pagination .page-item.active .page-link"
+-		)
+-
+-		if ((await activePage.count()) === 0) {
+-			return pageNumber === 1 // Default to page 1 if no active page
+-		}
+-
+-		const currentPageText = await activePage.textContent()
+-		return parseInt(currentPageText, 10) === pageNumber
+-	}
++	// ==================== UTILITY ====================
+ 
+ 	/**
+-	 * Check if specific page number exists in pagination
+-	 * @param {number} pageNumber - Page number to check
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {boolean} True if the specified page exists
+-	 */
+-	async isPageAvailable(pageNumber, timeout = 10000) {
+-		await this.paginationContainer.waitFor({ state: "visible", timeout })
+-		const pageLink = this.page.locator(
+-			`.pagination .page-link:has-text("${pageNumber}")`
+-		)
+-		return (await pageLink.count()) > 0
+-	}
+-
+-	// ==================== PAGINATION UTILITY METHODS ====================
+-
+-	/**
+-	 * Navigate through all pages and execute a callback on each page
+-	 * @param {Function} pageCallback - Function to execute on each page
+-	 * @param {number} maxPages - Maximum number of pages to process (default: 10)
+-	 * @returns {Array} Array of results from each page
++	 * Navigate through all pages executing a callback on each.
++	 * @param {Function} pageCallback - Receives current page number, returns data
++	 * @param {number} maxPages - Safety limit to avoid infinite loops
++	 * @returns {Promise<Array>}
+ 	 */
+ 	async navigateThroughAllPages(pageCallback, maxPages = 10) {
+ 		const results = []
+ 		let currentPage = 1
+ 
+ 		while (currentPage <= maxPages) {
+-			// Execute callback on current page
+-			const pageResult = await pageCallback(currentPage)
+-			results.push(pageResult)
++			results.push(await pageCallback(currentPage))
+ 
+-			// Check if there's a next page
+ 			const hasNext = await this.hasNextPage()
+ 			if (!hasNext) break
+ 
+-			// Navigate to next page
+ 			await this.clickNextPage()
+ 			currentPage++
+ 		}
+ 
+ 		if (currentPage >= maxPages) {
+-			console.warn(
+-				`Reached maximum page limit (${maxPages}) - possible infinite loop`
+-			)
++			console.warn(`Reached maximum page limit (${maxPages}) — possible infinite loop`)
+ 		}
+ 
+ 		return results
+ 	}
+-
+-	/**
+-	 * Get total number of items across all pages (estimate)
+-	 * @param {Function} getItemsCountCallback - Function that returns item count on current page
+-	 * @param {number} maxPages - Maximum number of pages to check (default: 10)
+-	 * @returns {number} Estimated total number of items
+-	 */
+-	async getTotalItemsCount(getItemsCountCallback, maxPages = 10) {
+-		let totalCount = 0
+-		let currentPage = 1
+-
+-		while (currentPage <= maxPages) {
+-			// Get item count on current page
+-			const pageCount = await getItemsCountCallback()
+-			totalCount += pageCount
+-
+-			// Check if there's a next page
+-			const hasNext = await this.hasNextPage()
+-			if (!hasNext) break
+-
+-			// Navigate to next page
+-			await this.clickNextPage()
+-			currentPage++
+-		}
+-
+-		return totalCount
+-	}
+ }
+diff --git a/src/po/Components/SearchComponent.js b/src/po/Components/SearchComponent.js
+index 18aecee..ca5858a 100644
+--- a/src/po/Components/SearchComponent.js
++++ b/src/po/Components/SearchComponent.js
+@@ -1,106 +1,56 @@
+ // ====================================================================
+ // SEARCH COMPONENT
+ // ====================================================================
+-// Reusable search functionality component
+-// Implements DRY principle by centralizing search-related logic
+-// ====================================================================
+ import { waitForProductsVisible } from "../../configs/utils/helpers.js"
+ 
+ export class SearchComponent {
+ 	constructor(page) {
+ 		this.page = page
+ 
+-		// ==================== SEARCH ELEMENTS ====================
+-		this.searchField = page.locator('[data-test="search-query"]')
++		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
++		this.searchField = page.getByTestId("search-query")
++		// getByRole es preferido para botones con texto accesible visible
+ 		this.searchButton = page.getByRole("button", { name: "Search" })
+ 		this.searchResultsContainer = page.locator(
+ 			'div.container[data-test="search_completed"]'
+ 		)
+ 	}
+ 
+-	// ==================== SEARCH METHODS ====================
+-
+ 	/**
+-	 * Fill search field with product name
+-	 * @param {string} product - Product name to search for
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
++	 * Fill search field and submit.
++	 * fill() y click() auto-wait — no explicit waitFor needed.
++	 * @param {string} product
+ 	 */
+-	async fillSearch(product, timeout = 10000) {
+-		await this.searchField.waitFor({ state: "visible", timeout })
++	async searchProduct(product) {
+ 		await this.searchField.fill(product)
+-	}
+-
+-	/**
+-	 * Complete search operation for a product
+-	 * @param {string} product - Product name to search for
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async searchProduct(product, timeout = 10000) {
+-		await this.fillSearch(product, timeout)
+ 		await this.searchButton.click()
+ 	}
+ 
+ 	/**
+-	 * Wait for search results to become visible
+-	 * @param {number} timeout - Timeout in milliseconds (default: 15000)
++	 * Wait for search results to become visible.
++	 * Legítimo: no hay acción de Playwright que dispare auto-wait aquí.
++	 * @param {number} timeout
+ 	 */
+ 	async waitForSearchResults(timeout = 15000) {
+ 		await waitForProductsVisible(
+ 			this.page,
+-			this.searchResultsContainer.locator('h5[data-test="product-name"]'),
++			this.searchResultsContainer.getByTestId("product-name"),
+ 			this.searchResultsContainer,
+ 			timeout
+ 		)
+ 	}
+ 
+ 	/**
+-	 * Get first product name from search results
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {string} First product name
++	 * Get the first product name from search results.
++	 * @param {number} timeout
++	 * @returns {Promise<string>}
+ 	 */
+ 	async getFirstProductName(timeout = 10000) {
+ 		await this.waitForSearchResults(timeout)
+-		const firstProduct = this.searchResultsContainer
++		return await this.searchResultsContainer
+ 			.locator("a.card")
+ 			.first()
+-		return await firstProduct
+-			.locator('h5[data-test="product-name"]')
++			.getByTestId("product-name")
+ 			.textContent()
+ 	}
+-
+-	/**
+-	 * Check if search results are visible
+-	 * @param {number} timeout - Timeout in milliseconds (default: 3000)
+-	 * @returns {boolean} True if search results are visible
+-	 */
+-	async hasSearchResults(timeout = 3000) {
+-		try {
+-			await this.searchResultsContainer.waitFor({
+-				state: "visible",
+-				timeout
+-			})
+-			return true
+-		} catch {
+-			return false
+-		}
+-	}
+-
+-	/**
+-	 * Clear search field
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async clearSearch(timeout = 10000) {
+-		await this.searchField.waitFor({ state: "visible", timeout })
+-		await this.searchField.clear()
+-	}
+-
+-	/**
+-	 * Get search field value
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {string} Current search value
+-	 */
+-	async getSearchValue(timeout = 10000) {
+-		await this.searchField.waitFor({ state: "visible", timeout })
+-		return await this.searchField.inputValue()
+-	}
+ }
+diff --git a/src/po/Pages/BasePage.js b/src/po/Pages/BasePage.js
+index f557492..e95b7cf 100644
+--- a/src/po/Pages/BasePage.js
++++ b/src/po/Pages/BasePage.js
+@@ -1,8 +1,8 @@
+ // ====================================================================
+ // BASE PAGE CLASS
+ // ====================================================================
+-// Provides common functionality for all page objects
+-// Implements DRY and SOLID principles through reusable methods
++// Provides common functionality for all page objects.
++// Only contains methods that are actually used across page objects.
+ // ====================================================================
+ 
+ import { NavigationBarComponent } from "../Components/index.js"
+@@ -14,114 +14,36 @@ export class BasePage {
+ 		this.navigationBar = new NavigationBarComponent(page)
+ 	}
+ 
+-	// ==================== COMMON WAIT METHODS ====================
++	// ==================== WAIT METHODS ====================
+ 
+ 	/**
+-	 * Wait for the first element matching the locator to be visible
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
++	 * Wait for the first element matching the locator to be visible.
++	 * Used before allTextContents() and count() which don't have auto-wait.
++	 * @param {import('@playwright/test').Locator} locator
++	 * @param {number} timeout
+ 	 */
+ 	async waitForElementVisible(locator, timeout = 10000) {
+-		// Use first() to avoid strict mode violation for multi-element locators
+ 		await locator.first().waitFor({ state: "visible", timeout })
+ 	}
+ 
+ 	/**
+-	 * Wait for products to become visible with optional container
+-	 * @param {Locator} productLocator - Product element locator
+-	 * @param {Locator} containerLocator - Container element locator (optional)
+-	 * @param {number} timeout - Timeout in milliseconds (default: 15000)
++	 * Wait for products to become visible with optional container.
++	 * @param {import('@playwright/test').Locator} productLocator
++	 * @param {import('@playwright/test').Locator|null} containerLocator
++	 * @param {number} timeout
+ 	 */
+-	async waitForProductsVisible(
+-		productLocator,
+-		containerLocator = null,
+-		timeout = 15000
+-	) {
+-		await waitForProductsVisible(
+-			this.page,
+-			productLocator,
+-			containerLocator,
+-			timeout
+-		)
++	async waitForProductsVisible(productLocator, containerLocator = null, timeout = 15000) {
++		await waitForProductsVisible(this.page, productLocator, containerLocator, timeout)
+ 	}
+ 
+-	/**
+-	 * Wait for element to be attached to DOM
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async waitForElementAttached(locator, timeout = 10000) {
+-		await locator.first().waitFor({ state: "attached", timeout })
+-	}
+-
+-	/**
+-	 * Wait for element to be hidden
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async waitForElementHidden(locator, timeout = 10000) {
+-		await locator.first().waitFor({ state: "hidden", timeout })
+-	}
+-
+-	/**
+-	 * Wait for element to be detached from DOM
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async waitForElementDetached(locator, timeout = 10000) {
+-		await locator.first().waitFor({ state: "detached", timeout })
+-	}
+-
+-	// ==================== COMMON INTERACTION METHODS ====================
+-
+-	/**
+-	 * Safe click with visibility wait
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async safeClick(locator, timeout = 10000) {
+-		await this.waitForElementVisible(locator, timeout)
+-		await locator.click()
+-	}
+-
+-	/**
+-	 * Safe fill with visibility wait
+-	 * @param {Locator} locator - Element locator
+-	 * @param {string} text - Text to fill
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async safeFill(locator, text, timeout = 10000) {
+-		await this.waitForElementVisible(locator, timeout)
+-		await locator.fill(text)
+-	}
+-
+-	/**
+-	 * Safe check with visibility wait
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async safeCheck(locator, timeout = 10000) {
+-		await this.waitForElementVisible(locator, timeout)
+-		await locator.check()
+-	}
+-
+-	/**
+-	 * Safe uncheck with visibility wait
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 */
+-	async safeUncheck(locator, timeout = 10000) {
+-		await this.waitForElementVisible(locator, timeout)
+-		await locator.uncheck()
+-	}
+-
+-	// ==================== COMMON VALIDATION METHODS ====================
++	// ==================== VISIBILITY CHECK ====================
+ 
+ 	/**
+-	 * Check if element is visible
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 3000)
+-	 * @returns {boolean} True if element is visible
++	 * Check if element is visible without throwing.
++	 * Used for conditional logic — not as a replacement for expect assertions.
++	 * @param {import('@playwright/test').Locator} locator
++	 * @param {number} timeout
++	 * @returns {Promise<boolean>}
+ 	 */
+ 	async isElementVisible(locator, timeout = 3000) {
+ 		try {
+@@ -133,155 +55,41 @@ export class BasePage {
+ 	}
+ 
+ 	/**
+-	 * Get element text content
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {string} Element text content
+-	 */
+-	async getElementText(locator, timeout = 10000) {
+-		await this.waitForElementVisible(locator, timeout)
+-		return await locator.textContent()
+-	}
+-
+-	/**
+-	 * Get element input value
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {string} Input value
+-	 */
+-	async getInputValue(locator, timeout = 10000) {
+-		await this.waitForElementVisible(locator, timeout)
+-		return await locator.inputValue()
+-	}
+-
+-	/**
+-	 * Get element count
+-	 * @param {Locator} locator - Element locator
+-	 * @param {number} timeout - Timeout in milliseconds (default: 10000)
+-	 * @returns {number} Number of elements
++	 * Get element count.
++	 * Waits for at least one element to be visible before counting,
++	 * since count() has no auto-wait.
++	 * @param {import('@playwright/test').Locator} locator
++	 * @param {number} timeout
++	 * @returns {Promise<number>}
+ 	 */
+ 	async getElementCount(locator, timeout = 10000) {
+ 		try {
+ 			await this.waitForElementVisible(locator, timeout)
+ 		} catch {
+-			// If waiting for visibility times out, there might be 0 elements
+-			// Return 0 instead of throwing an error
+ 			return 0
+ 		}
+ 		return await locator.count()
+ 	}
+ 
+-	// ==================== COMMON NAVIGATION METHODS ====================
++	// ==================== NAVIGATION ====================
+ 
+ 	/**
+-	 * Navigate to URL with enhanced reliability and retry mechanism
+-	 * @param {string} url - URL to navigate to
+-	 * @param {number} timeout - Timeout in milliseconds (default: 45000)
++	 * Navigate to URL.
++	 * Uses domcontentloaded to avoid hanging on slow external resources.
++	 * Retries are handled by Playwright's retries config, not manually.
++	 * @param {string} url
++	 * @param {number} timeout
+ 	 */
+ 	async navigateTo(url, timeout = 45000) {
+-		let lastError
+-		const maxRetries = 2
+-
+-		for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+-			try {
+-				await this.performNavigationAttempt(
+-					url,
+-					attempt,
+-					maxRetries,
+-					timeout
+-				)
+-				return // Success
+-			} catch (error) {
+-				lastError = error
+-				const shouldRetry = await this.handleNavigationError(
+-					error,
+-					attempt,
+-					maxRetries
+-				)
+-				if (!shouldRetry) break
+-			}
+-		}
+-
+-		throw lastError
+-	}
+-
+-	/**
+-	 * Perform a single navigation attempt
+-	 * @param {string} url - URL to navigate to
+-	 * @param {number} attempt - Current attempt number
+-	 * @param {number} maxRetries - Maximum number of retries
+-	 * @param {number} timeout - Total timeout in milliseconds
+-	 */
+-	async performNavigationAttempt(url, attempt, maxRetries, timeout) {
+-		console.log(`Navigation attempt ${attempt} for ${url}`)
+-		const attemptTimeout = Math.floor(timeout / (maxRetries + 1))
+-		const waitCondition = attempt === 1 ? "domcontentloaded" : "networkidle"
+-
+-		await this.page.goto(url, {
+-			timeout: attemptTimeout,
+-			waitUntil: waitCondition
+-		})
++		await this.page.goto(url, { timeout, waitUntil: "domcontentloaded" })
+ 	}
+ 
+ 	/**
+-	 * Handle navigation error and determine if retry should occur
+-	 * @param {Error} error - Navigation error
+-	 * @param {number} attempt - Current attempt number
+-	 * @param {number} maxRetries - Maximum number of retries
+-	 * @returns {boolean} True if retry should be attempted
+-	 */
+-	async handleNavigationError(error, attempt, maxRetries) {
+-		console.warn(`Navigation attempt ${attempt} failed: ${error.message}`)
+-
+-		if (attempt <= maxRetries) {
+-			console.log(`Retrying navigation... (${attempt}/${maxRetries})`)
+-			await this.wait(3000)
+-			return true
+-		}
+-
+-		return false
+-	}
+-
+-	/**
+-	 * Wait for URL to match pattern
+-	 * @param {string|RegExp} urlPattern - URL pattern to wait for
+-	 * @param {number} timeout - Timeout in milliseconds (default: 15000)
++	 * Wait for URL to match pattern.
++	 * @param {string|RegExp} urlPattern
++	 * @param {number} timeout
+ 	 */
+ 	async waitForUrl(urlPattern, timeout = 15000) {
+ 		await this.page.waitForURL(urlPattern, { timeout })
+ 	}
+-
+-	// ==================== COMMON UTILITY METHODS ====================
+-
+-	/**
+-	 * Wait for specified time
+-	 * @param {number} ms - Time to wait in milliseconds
+-	 */
+-	async wait(ms) {
+-		await this.page.waitForTimeout(ms)
+-	}
+-
+-	/**
+-	 * Take screenshot
+-	 * @param {string} name - Screenshot name
+-	 */
+-	async takeScreenshot(name) {
+-		await this.page.screenshot({ path: `screenshots/${name}.png` })
+-	}
+-
+-	/**
+-	 * Get page title
+-	 * @returns {string} Page title
+-	 */
+-	async getPageTitle() {
+-		return await this.page.title()
+-	}
+-
+-	/**
+-	 * Get current URL
+-	 * @returns {string} Current URL
+-	 */
+-	getCurrentUrl() {
+-		return this.page.url()
+-	}
+ }
+diff --git a/src/po/Pages/CartPage.js b/src/po/Pages/CartPage.js
+index c2c7e21..ca2f4cd 100644
+--- a/src/po/Pages/CartPage.js
++++ b/src/po/Pages/CartPage.js
+@@ -7,43 +7,45 @@ export class CartPage {
+ 	constructor(page) {
+ 		this.page = page
+ 
+-		// ==================== CART TABLE ELEMENTS ====================
+-		this.cartItems = page.locator(
+-			"table.table-hover tbody tr.ng-star-inserted"
+-		)
+-
+ 		// ==================== PRODUCT INFORMATION ELEMENTS ====================
+-		this.productTitle = page.locator('[data-test="product-title"]')
+-		this.productQuantity = page.locator('[data-test="product-quantity"]')
+-		this.productPrice = page.locator('[data-test="product-price"]')
+-		this.linePrice = page.locator('[data-test="line-price"]')
+-		this.cartTotal = page.locator('[data-test="cart-total"]')
++		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
++		//
++		// Se eliminó cartItems (tr.ng-star-inserted) porque Angular renderiza la tabla
++		// en dos fases: primero el <table>/<tbody> vacío, luego llena las filas con datos.
++		// Esperar por tr.ng-star-inserted causa timeout porque el tbody ya existe en el DOM
++		// pero sin filas durante el primer render. Se espera directamente por los elementos
++		// de datos (product-title, cart-total) que solo aparecen cuando Angular terminó
++		// de renderizar con los datos del servidor.
++		this.productTitle = page.getByTestId("product-title")
++		this.productQuantity = page.getByTestId("product-quantity")
++		this.productPrice = page.getByTestId("product-price")
++		this.linePrice = page.getByTestId("line-price")
++		this.cartTotal = page.getByTestId("cart-total")
+ 	}
+ 
+ 	// ==================== WAIT METHODS ====================
+ 
+ 	/**
+-	 * Wait for cart to load completely including Angular rendering
++	 * Wait for cart to load completely including Angular rendering.
++	 *
++	 * Corrección: se reemplazó la espera en tr.ng-star-inserted por product-title
++	 * y cart-total, que son los elementos de datos reales. La tabla tiene dos fases
++	 * de render en Angular: shell estructural (visible rápido) → datos (async).
++	 * Esperar el shell (table.table-hover o tr.ng-star-inserted) no garantiza
++	 * que los datos ya estén presentes.
+ 	 */
+ 	async waitForCartLoad() {
+-		// Wait for table container to be visible
+-		const tableLocator = this.page.locator("table.table-hover")
+-		await tableLocator.waitFor({ state: "visible", timeout: 15000 })
+-
+-		// Wait for first cart item row to be visible
+-		await this.cartItems
+-			.first()
+-			.waitFor({ state: "visible", timeout: 15000 })
+-
+-		// Wait for cart total to be calculated and visible
+-		await this.cartTotal.waitFor({ state: "visible", timeout: 15000 })
++		// product-title garantiza que al menos una fila con datos está renderizada
++		await this.productTitle.first().waitFor({ state: "visible", timeout: 20000 })
++		// cart-total garantiza que el total fue calculado y renderizado
++		await this.cartTotal.waitFor({ state: "visible", timeout: 20000 })
+ 	}
+ 
+ 	// ==================== DATA RETRIEVAL METHODS ====================
+ 
+ 	/**
+ 	 * Get names of all products in cart
+-	 * @returns {string[]} Array of product names
++	 * @returns {Promise<string[]>} Array of product names
+ 	 */
+ 	async getProductNames() {
+ 		const rawTexts = await this.productTitle.allTextContents()
+@@ -52,7 +54,7 @@ export class CartPage {
+ 
+ 	/**
+ 	 * Get quantities of all products in cart
+-	 * @returns {number[]} Array of product quantities
++	 * @returns {Promise<number[]>} Array of product quantities
+ 	 */
+ 	async getQuantities() {
+ 		const inputs = await this.productQuantity.all()
+@@ -63,7 +65,7 @@ export class CartPage {
+ 
+ 	/**
+ 	 * Get prices of all products in cart
+-	 * @returns {number[]} Array of product prices
++	 * @returns {Promise<number[]>} Array of product prices
+ 	 */
+ 	async getPrices() {
+ 		const cells = await this.productPrice.all()
+@@ -76,7 +78,7 @@ export class CartPage {
+ 
+ 	/**
+ 	 * Get line totals for all products in cart
+-	 * @returns {number[]} Array of line totals (price * quantity)
++	 * @returns {Promise<number[]>} Array of line totals (price * quantity)
+ 	 */
+ 	async getLineTotals() {
+ 		const linePriceCells = await this.linePrice.all()
+@@ -90,7 +92,7 @@ export class CartPage {
+ 
+ 	/**
+ 	 * Get total cart amount
+-	 * @returns {number} Cart total amount
++	 * @returns {Promise<number>} Cart total amount
+ 	 */
+ 	async getCartTotal() {
+ 		const text = await this.cartTotal.textContent()
+diff --git a/src/po/Pages/ContactPage.js b/src/po/Pages/ContactPage.js
+index bc38d57..44b0373 100644
+--- a/src/po/Pages/ContactPage.js
++++ b/src/po/Pages/ContactPage.js
+@@ -5,9 +5,11 @@ export class ContactPage extends BasePage {
+ 		super(page)
+ 
+ 		// ==================== MAIN CONTENT ELEMENTS ====================
+-		this.mainHeading = page.locator("h3")
++		this.mainHeading = page.getByRole("heading", { level: 3 })
+ 
+ 		// ==================== FORM LABEL ELEMENTS ====================
++		// Los labels se localizan por su atributo `for`, que los vincula al input.
++		// getByRole("label") no existe en Playwright — se mantiene locator con atributo for.
+ 		this.firstNameLabel = page.locator('label[for="first_name"]')
+ 		this.lastNameLabel = page.locator('label[for="last_name"]')
+ 		this.emailLabel = page.locator('label[for="email"]')
+@@ -16,17 +18,19 @@ export class ContactPage extends BasePage {
+ 		this.attachmentLabel = page.locator('label[for="attachment"]')
+ 
+ 		// ==================== FORM INPUT ELEMENTS ====================
+-		this.firstNameInput = page.locator('[data-test="first-name"]')
+-		this.lastNameInput = page.locator('[data-test="last-name"]')
+-		this.emailInput = page.locator('[data-test="email"]')
+-		this.subjectSelect = page.locator('[data-test="subject"]')
+-		this.messageTextarea = page.locator('[data-test="message"]')
++		// getByLabel es la práctica recomendada para inputs con label asociado
++		this.firstNameInput = page.getByLabel("First name")
++		this.lastNameInput = page.getByLabel("Last name")
++		this.emailInput = page.getByLabel("Email address")
++		// getByRole("combobox") para selects con nombre accesible
++		this.subjectSelect = page.getByRole("combobox", { name: /subject/i })
++		this.messageTextarea = page.getByLabel("Message")
+ 
+ 		// ==================== BUTTON AND MESSAGE ELEMENTS ====================
+-		this.submitButton = page.locator('[data-test="contact-submit"]')
++		this.submitButton = page.getByTestId("contact-submit")
+ 		this.warningLabel = page.locator("#attachmentHelp")
+ 
+-		// Robust selector for info label that works across all languages
++		// Selector robusto para el info label
+ 		this.infoLabel = page.locator(
+ 			'p:has(a[href*="github.com/testsmith-io/practice-software-testing"])'
+ 		)
+@@ -47,7 +51,7 @@ export class ContactPage extends BasePage {
+ 
+ 	/**
+ 	 * Get normalized info text with extra spaces removed
+-	 * @returns {string} Normalized info text
++	 * @returns {Promise<string>} Normalized info text
+ 	 */
+ 	async getNormalizedInfoText() {
+ 		const text = await this.infoLabel.textContent()
+diff --git a/src/po/Pages/FavoritesPage.js b/src/po/Pages/FavoritesPage.js
+index a888209..c9833d8 100644
+--- a/src/po/Pages/FavoritesPage.js
++++ b/src/po/Pages/FavoritesPage.js
+@@ -1,50 +1,44 @@
++import { expect } from "@playwright/test"
++
+ /**
+  * Favorites Page Object
+- * Handles interactions with the user's favorite products list
+- * Provides methods to manage and verify favorite products
+  */
+ export class FavoritesPage {
+ 	constructor(page) {
+ 		this.page = page
+ 
+-		// ==================== PAGE ELEMENTS ====================
+-
+-		// Favorite product elements
+-		this.favCard = page.locator('[data-test="product-name"]').first()
+-		this.productName = page.locator('[data-test="product-name"]')
+-		this.deleteBtn = page.locator('[data-test="delete"]').first()
+-
+-		// Status messages
+-		this.emptyMsg = page.locator("text=There are no favorites yet")
++		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
++		this.productName = page.getByTestId("product-name")
++		this.deleteBtn = page.getByTestId("delete").first()
++		this.emptyMsg = page.getByText("There are no favorites yet")
+ 	}
+ 
+ 	// ==================== WAIT METHODS ====================
+ 
+ 	/**
+-	 * Wait for favorites list to load completely
++	 * Wait for favorites list to load.
++	 * Legítimo: no hay acción de Playwright posterior que dispare auto-wait.
+ 	 */
+ 	async waitForFavoritesLoad() {
+-		await this.productName
+-			.first()
+-			.waitFor({ state: "visible", timeout: 15000 })
++		await this.productName.first().waitFor({ state: "visible", timeout: 15000 })
+ 	}
+ 
+ 	/**
+-	 * Wait until no favorite products remain
++	 * Wait until all favorites are removed.
++	 * Uses toHaveCount(0) to avoid the bug where .first() detaches
++	 * but remaining items are still in the DOM.
+ 	 */
+ 	async waitUntilNoFavorites() {
+-		await this.productName
+-			.first()
+-			.waitFor({ state: "detached", timeout: 10000 })
++		await expect(this.productName).toHaveCount(0, { timeout: 10000 })
+ 	}
+ 
+ 	// ==================== FAVORITE MANAGEMENT METHODS ====================
+ 
+ 	/**
+-	 * Delete the first favorite product from the list
++	 * Delete the first favorite product.
++	 * deleteBtn.click() auto-waits for visibility — waitFor removed.
+ 	 */
+ 	async deleteFirstFavorite() {
+-		await this.deleteBtn.waitFor({ state: "visible", timeout: 10000 })
+ 		await this.deleteBtn.click()
+ 		await this.waitUntilNoFavorites()
+ 	}
+@@ -52,8 +46,8 @@ export class FavoritesPage {
+ 	// ==================== STATUS CHECK METHODS ====================
+ 
+ 	/**
+-	 * Check if favorites list is empty
+-	 * @returns {boolean} True if no favorites are present
++	 * Check if favorites list is empty.
++	 * @returns {Promise<boolean>}
+ 	 */
+ 	async isEmpty() {
+ 		return await this.emptyMsg.isVisible()
+diff --git a/src/po/Pages/MyAccountPage.js b/src/po/Pages/MyAccountPage.js
+index e474cab..de44bcf 100644
+--- a/src/po/Pages/MyAccountPage.js
++++ b/src/po/Pages/MyAccountPage.js
+@@ -2,63 +2,53 @@ export class MyAccountPage {
+ 	constructor(page) {
+ 		this.page = page
+ 
+-		// ==================== NAVIGATION ELEMENTS ====================
+-		this.userName = page.locator('[data-test="nav-menu"]')
+-		this.myFavoritesLink = page.locator('[data-test="nav-my-favorites"]')
+-		this.myProfileLink = page.locator('[data-test="nav-my-profile"]')
++		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
++		this.userName = page.getByTestId("nav-menu")
++		this.myFavoritesLink = page.getByTestId("nav-my-favorites")
++		this.myProfileLink = page.getByTestId("nav-my-profile")
+ 	}
+ 
+ 	// ==================== WAIT METHODS ====================
+ 
+ 	/**
+-	 * Wait for user name element to be visible
++	 * Wait for user name element to be visible.
++	 * Usado como barrera para confirmar que el login fue exitoso
++	 * y que el DOM ya refleja el estado autenticado.
++	 * No hay acción de Playwright posterior que dispare auto-wait aquí.
+ 	 */
+ 	async waitForUserNameVisible() {
+ 		await this.userName.waitFor({ state: "visible", timeout: 10000 })
+ 	}
+ 
+-	/**
+-	 * Wait for profile link to be visible
+-	 */
+-	async waitForMyProfileLinkVisible() {
+-		await this.myProfileLink.waitFor({ state: "visible", timeout: 10000 })
+-	}
+-
+ 	// ==================== USER MENU METHODS ====================
+ 
+ 	/**
+-	 * Open user menu dropdown
++	 * Open user menu dropdown.
++	 * click() auto-waits for visibility.
+ 	 */
+ 	async openUserMenu() {
+ 		await this.userName.click()
+ 	}
+ 
+-	/**
+-	 * Click on profile link in user menu
+-	 */
+-	async clickOnProfileLink() {
+-		await this.waitForMyProfileLinkVisible()
+-		await this.myProfileLink.click()
+-	}
+-
+ 	// ==================== NAVIGATION METHODS ====================
+ 
+ 	/**
+-	 * Navigate to favorites page via user menu
++	 * Navigate to favorites page via user menu.
++	 * myFavoritesLink.click() auto-waits — no explicit waitFor needed.
+ 	 */
+ 	async goToMyFavorites() {
+ 		await this.openUserMenu()
+-		await this.myFavoritesLink.waitFor({ state: "visible", timeout: 10000 })
+ 		await this.myFavoritesLink.click()
+ 		await this.page.waitForURL("**/account/favorites", { timeout: 15000 })
+ 	}
+ 
+ 	/**
+-	 * Complete flow to access profile page
++	 * Navigate to profile page via user menu.
++	 * myProfileLink.click() auto-waits — no explicit waitFor needed.
+ 	 */
+ 	async accessToProfile() {
+-		await this.userName.click()
+-		await this.clickOnProfileLink()
++		await this.openUserMenu()
++		await this.myProfileLink.click()
+ 		await this.page.waitForURL("**/account/profile", { timeout: 15000 })
+ 	}
+ }
+diff --git a/src/po/Pages/ProductDetailPage.js b/src/po/Pages/ProductDetailPage.js
+index 3713b46..a6c099a 100644
+--- a/src/po/Pages/ProductDetailPage.js
++++ b/src/po/Pages/ProductDetailPage.js
+@@ -1,93 +1,80 @@
+ /**
+  * Product Detail Page Object
+  * Handles interactions and data retrieval from the product detail page
+- * Provides methods to manage product quantities, add to cart, and add to favorites
+  */
+ export class ProductDetailPage {
+ 	constructor(page) {
+ 		this.page = page
+ 
+ 		// ==================== PRODUCT INFORMATION ELEMENTS ====================
+-		this.productPrice = page.locator('[data-test="unit-price"]')
+-		this.productDescription = page.locator(
+-			'[data-test="product-description"]'
+-		)
+-		this.brandBadge = page.locator('[aria-label="brand"]')
++		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
++		this.productPrice = page.getByTestId("unit-price")
++		this.productDescription = page.getByTestId("product-description")
+ 
+ 		// ==================== QUANTITY MANAGEMENT ELEMENTS ====================
+-		this.quantityInput = page.locator('[data-test="quantity"]')
+-		this.increaseButton = page.locator('[data-test="increase-quantity"]')
++		this.quantityInput = page.getByTestId("quantity")
++		this.increaseButton = page.getByTestId("increase-quantity")
+ 
+ 		// ==================== ACTION BUTTONS ====================
+-		this.addToCartButton = page.locator('[data-test="add-to-cart"]')
+-		this.addToFavoritesButton = page.locator(
+-			'[data-test="add-to-favorites"]'
+-		)
+-		this.cartLink = page.locator('[data-test="nav-cart"]')
++		this.addToCartButton = page.getByTestId("add-to-cart")
++		this.addToFavoritesButton = page.getByTestId("add-to-favorites")
++		this.cartLink = page.getByTestId("nav-cart")
+ 
+ 		// ==================== MESSAGE ELEMENTS ====================
++		// waitFor en mensajes es legítimo: no hay acción de Playwright
++		// posterior que dispare auto-wait en estos casos.
+ 		this.successMsg = page.locator("div.toast-success")
+-		this.favSuccessMessage = page.locator(
+-			'[aria-label="Product added to your favorites list."]'
+-		)
+-		this.favErrorMessage = page.locator(
+-			'div[role="alert"]:has-text("Unauthorized")'
+-		)
++		this.favSuccessMessage = page.getByRole("alert", {
++			name: "Product added to your favorites list."
++		})
++		this.favErrorMessage = page
++			.getByRole("alert")
++			.filter({ hasText: "Unauthorized" })
+ 	}
+ 
+ 	// ==================== WAIT METHODS ====================
+ 
+ 	/**
+-	 * Wait for product data to load completely
++	 * Wait for product data to load completely.
++	 * Legítimo: no hay acción posterior inmediata que dispare auto-wait.
++	 * Confirma que Angular terminó de cargar los datos del producto.
+ 	 */
+ 	async waitForProductData() {
+ 		await this.productPrice.waitFor({ state: "visible", timeout: 10000 })
+-		await this.productDescription.waitFor({
+-			state: "visible",
+-			timeout: 10000
+-		})
++		await this.productDescription.waitFor({ state: "visible", timeout: 10000 })
+ 	}
+ 
+ 	/**
+-	 * Wait for success message to appear and disappear
+-	 * Enhanced with retry logic for flaky tests
++	 * Wait for add-to-cart success toast to appear and disappear.
+ 	 */
+-
+ 	async waitForSuccessMessage() {
+-		// Wait for success message to appear with increased timeout
+ 		await this.successMsg.waitFor({ state: "visible", timeout: 15000 })
+-
+-		// Wait for success message to disappear with increased timeout
+ 		await this.successMsg.waitFor({ state: "detached", timeout: 15000 })
+ 	}
+ 
+ 	/**
+-	 * Wait for favorites success message to appear and disappear
++	 * Wait for add-to-favorites success alert to appear and disappear.
+ 	 */
+ 	async waitForFavSuccessMsg() {
+-		await this.favSuccessMessage.waitFor({
+-			state: "visible",
+-			timeout: 10000
+-		})
+-		await this.favSuccessMessage.waitFor({
+-			state: "detached",
+-			timeout: 10000
+-		})
++		await this.favSuccessMessage.waitFor({ state: "visible", timeout: 10000 })
++		await this.favSuccessMessage.waitFor({ state: "detached", timeout: 10000 })
+ 	}
+ 
+ 	// ==================== QUANTITY METHODS ====================
+ 
+ 	/**
+-	 * Increase product quantity by clicking increase button
+-	 * @param {number} times - Number of times to click increase button
++	 * Increase product quantity.
++	 * increaseButton.click() auto-waits for visibility.
++	 * @param {number} times
+ 	 */
+ 	async increaseQuantity(times = 1) {
+-		for (let i = 0; i < times; ++i) await this.increaseButton.click()
++		for (let i = 0; i < times; i++) await this.increaseButton.click()
+ 	}
+ 
+ 	/**
+-	 * Get current quantity value from input field
+-	 * @returns {number} Current quantity
++	 * Get current quantity value from input.
++	 * inputValue() does not auto-wait for visibility, so waitFor is needed.
++	 * @returns {Promise<number>}
+ 	 */
+ 	async getCurrentQuantity() {
+ 		await this.quantityInput.waitFor({ state: "visible", timeout: 10000 })
+@@ -97,55 +84,37 @@ export class ProductDetailPage {
+ 	// ==================== CART METHODS ====================
+ 
+ 	/**
+-	 * Click add to cart button
+-	 */
+-	async clickAddToCartButton() {
+-		await this.addToCartButton.waitFor({ state: "visible", timeout: 10000 })
+-		await this.addToCartButton.click()
+-	}
+-
+-	/**
+-	 * Complete add to cart flow with quantity adjustment
+-	 * @param {number} clicks - Number of times to increase quantity before adding
++	 * Complete add to cart flow with quantity adjustment.
++	 * @param {number} clicks - Extra clicks on increase button (total qty = clicks + 1)
+ 	 */
+ 	async addToCartByPlusClicks(clicks = 1) {
+ 		await this.increaseQuantity(clicks)
+-		await this.clickAddToCartButton()
++		await this.addToCartButton.click()
+ 		await this.waitForSuccessMessage()
+ 	}
+ 
+ 	/**
+-	 * Get product price as numeric value
+-	 * @returns {number} Product price
++	 * Get product price as numeric value.
++	 * @returns {Promise<number>}
+ 	 */
+ 	async getProductPrice() {
+ 		const text = await this.productPrice.textContent()
+ 		return parseFloat(text)
+ 	}
+ 
+-	/**
+-	 * Navigate to cart page via header link
+-	 */
+-	async goToCartViaHeaderLink() {
+-		await this.cartLink.click()
+-		await this.page.waitForURL("**/checkout", { timeout: 15000 })
+-	}
+-
+ 	// ==================== FAVORITES METHODS ====================
+ 
+ 	/**
+-	 * Click add to favorites button
++	 * Click add to favorites button.
++	 * addToFavoritesButton puede tardar en aparecer en la página de detalle
++	 * (Angular lazy loading), por eso se mantiene el timeout más alto.
+ 	 */
+ 	async clickAddToFavorites() {
+-		await this.addToFavoritesButton.waitFor({
+-			state: "visible",
+-			timeout: 25000
+-		})
+ 		await this.addToFavoritesButton.click()
+ 	}
+ 
+ 	/**
+-	 * Complete add to favorites flow
++	 * Complete add to favorites flow.
+ 	 */
+ 	async addProductToFavorites() {
+ 		await this.clickAddToFavorites()
+@@ -155,11 +124,12 @@ export class ProductDetailPage {
+ 	// ==================== BRAND METHODS ====================
+ 
+ 	/**
+-	 * Get brand badge text content
+-	 * @returns {string} Brand name
++	 * Get brand badge text content.
++	 * @returns {Promise<string>}
+ 	 */
+ 	async getBrandBadgeText() {
+-		await this.brandBadge.waitFor({ state: "visible", timeout: 10000 })
+-		return await this.brandBadge.textContent()
++		const brandLocator = this.page.locator('[aria-label="brand"]')
++		await brandLocator.waitFor({ state: "visible", timeout: 10000 })
++		return await brandLocator.textContent()
+ 	}
+ }
+diff --git a/src/po/Pages/ProductsPage.js b/src/po/Pages/ProductsPage.js
+index c809de9..e98a85d 100644
+--- a/src/po/Pages/ProductsPage.js
++++ b/src/po/Pages/ProductsPage.js
+@@ -1,10 +1,6 @@
+ // ====================================================================
+-// PRODUCTS PAGE - REFACTORED VERSION
++// PRODUCTS PAGE
+ // ====================================================================
+-// Refactored using DRY and SOLID principles with component composition
+-// Extends BasePage and uses reusable components for search, filters, and pagination
+-// ====================================================================
+-
+ import { BasePage } from "./BasePage.js"
+ import {
+ 	SearchComponent,
+@@ -17,231 +13,158 @@ export class ProductsPage extends BasePage {
+ 	constructor(page) {
+ 		super(page)
+ 
+-		// Initialize reusable components
+ 		this.searchComponent = new SearchComponent(page)
+ 		this.filterComponent = new FilterComponent(page)
+ 		this.paginationComponent = new PaginationComponent(page)
+ 
+-		// ==================== PRODUCT DISPLAY ELEMENTS ====================
++		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
+ 		this.productCards = page.locator("a.card")
+-		this.productName = page.locator('h5[data-test="product-name"]')
+-		this.outOfStockLabels = page.locator('[data-test="out-of-stock"]')
+-		this.ecoBadges = page.locator('[data-test="eco-badge"]')
++		this.productName = page.getByTestId("product-name")
++		this.outOfStockLabels = page.getByTestId("out-of-stock")
++		this.ecoBadges = page.getByTestId("eco-badge")
+ 	}
+ 
+-	// ==================== NAVIGATION METHODS ====================
++	// ==================== NAVIGATION ====================
+ 
+-	/**
+-	 * Navigate to products page
+-	 */
+ 	async navigateToProductsPage() {
+ 		await this.navigateTo(URLS.BASE)
+ 		await this.waitForInitialProductsLoad()
+ 	}
+ 
+-	// ==================== SEARCH METHODS (Delegated to SearchComponent) ====================
++	// ==================== SEARCH ====================
++	// Métodos de búsqueda delegados a SearchComponent.
++	// Se mantienen como fachada para que commands.js no necesite
++	// conocer la estructura interna de componentes.
+ 
+-	/**
+-	 * Fill search field with product name
+-	 * @param {string} product - Product name to search for
+-	 */
+-	async fillSearch(product) {
+-		await this.searchComponent.fillSearch(product)
+-	}
+-
+-	/**
+-	 * Complete search operation for a product
+-	 * @param {string} product - Product name to search for
+-	 */
++	/** @param {string} product */
+ 	async searchProduct(product) {
+ 		await this.searchComponent.searchProduct(product)
+ 	}
+ 
+-	/**
+-	 * Wait for search results to become visible
+-	 */
+-	async waitForVisibleResult() {
++	async waitForSearchResults() {
+ 		await this.searchComponent.waitForSearchResults()
+ 	}
+ 
+-	/**
+-	 * Get first product name from search results
+-	 * @returns {string} First product name
+-	 */
+-	async getFirstProductName() {
+-		return await this.searchComponent.getFirstProductName()
+-	}
+-
+-	// ==================== FILTER METHODS (Delegated to FilterComponent) ====================
++	// ==================== FILTERS ====================
+ 
+-	/**
+-	 * Select subcategory filter by exact name match
+-	 * @param {string} subcategoryName - Subcategory name to filter by
+-	 */
++	/** @param {string} subcategoryName */
+ 	async clickSubcategoryCheckbox(subcategoryName) {
+ 		await this.filterComponent.clickSubcategoryCheckbox(subcategoryName)
+ 	}
+ 
+-	/**
+-	 * Select brand filter by name
+-	 * @param {string} brandName - Brand name to filter by
+-	 */
++	/** @param {string} brandName */
+ 	async selectBrandByName(brandName) {
+ 		await this.filterComponent.selectBrandByName(brandName)
+ 	}
+ 
+-	/**
+-	 * Deselect brand filter by name
+-	 * @param {string} brandName - Brand name to deselect
+-	 */
++	/** @param {string} brandName */
+ 	async deselectBrandByName(brandName) {
+ 		await this.filterComponent.deselectBrandByName(brandName)
+ 	}
+ 
+-	/**
+-	 * Activate eco-friendly filter
+-	 */
+ 	async clickEcoFriendlyFilter() {
+ 		await this.filterComponent.clickEcoFriendlyFilter()
+ 	}
+ 
+-	/**
+-	 * Wait for filter operation to complete
+-	 */
++	// waitForFilterCycle y waitForFilterResults se usan desde commands.js
+ 	async waitForFilterCycle() {
+ 		await this.filterComponent.waitForFilterCycle()
+ 	}
+ 
+-	/**
+-	 * Wait for filter results to load
+-	 */
+ 	async waitForFilterResults() {
+ 		await this.filterComponent.waitForFilterResults()
+ 	}
+ 
+-	// ==================== PAGINATION METHODS (Delegated to PaginationComponent) ====================
++	// ==================== PAGINATION ====================
+ 
+-	/**
+-	 * Check if next page is available
+-	 * @returns {boolean} True if next page exists and is enabled
+-	 */
++	/** @returns {Promise<boolean>} */
+ 	async hasNextPage() {
+ 		return await this.paginationComponent.hasNextPage()
+ 	}
+ 
+-	/**
+-	 * Get the number of pagination pages available
+-	 * @returns {number} Count of pagination pages
+-	 */
+-	async getNextPageCount() {
+-		return await this.paginationComponent.getPageCount()
+-	}
+-
+-	/**
+-	 * Navigate to next page of results
+-	 */
+ 	async clickNextPage() {
+ 		await this.paginationComponent.clickNextPage()
+ 	}
+ 
+-	// ==================== PRODUCT INTERACTION METHODS ====================
++	// ==================== PRODUCT INTERACTION ====================
+ 
+ 	/**
+-	 * Access product detail page by product name
+-	 * @param {string} productName - Name of product to access
++	 * Navigate to product detail page by name.
++	 * @param {string} productName
+ 	 */
+ 	async accessToProductDetail(productName) {
+-		await this.waitForVisibleResult()
++		await this.waitForSearchResults()
+ 		await this.clickOnProduct(productName)
+ 		await this.waitForUrl(/\/product\//)
+ 	}
+ 
+ 	/**
+-	 * Get locator for specific product by name
+-	 * @param {string} productName - Product name to locate
+-	 * @returns {Locator} Product element locator
++	 * Get locator for a product card filtered by name.
++	 * Uses chained filter — recommended Playwright pattern.
++	 * @param {string} productName
++	 * @returns {import('@playwright/test').Locator}
+ 	 */
+ 	getProductTitleLocator(productName) {
+ 		return this.productCards.filter({
+-			has: this.page.locator(
+-				`h5[data-test="product-name"]:has-text("${productName}")`
+-			)
++			has: this.page.getByTestId("product-name").filter({ hasText: productName })
+ 		})
+ 	}
+ 
+ 	/**
+-	 * Click on specific product by name
+-	 * @param {string} productName - Product name to click
++	 * Click on a product card by name.
++	 * click() auto-waits for visibility.
++	 * @param {string} productName
+ 	 */
+ 	async clickOnProduct(productName) {
+-		const productLocator = this.getProductTitleLocator(productName)
+-		await this.safeClick(productLocator)
++		await this.getProductTitleLocator(productName).click()
+ 	}
+ 
+-	// ==================== WAIT METHODS ====================
+-
+ 	/**
+-	 * Wait for initial products to load on page
+-	 * @param {number} timeout - Timeout in milliseconds (default: 15000)
++	 * Search and navigate to product detail in one step.
++	 * @param {string} productName
+ 	 */
++	async searchAndSelectProduct(productName) {
++		await this.searchProduct(productName)
++		await this.waitForSearchResults()
++		await this.accessToProductDetail(productName)
++	}
++
++	// ==================== WAIT METHODS ====================
++
++	/** @param {number} timeout */
+ 	async waitForInitialProductsLoad(timeout = 15000) {
+ 		await this.waitForProductsVisible(this.productName, null, timeout)
+ 	}
+ 
+-	// ==================== VALIDATION METHODS ====================
++	// ==================== VALIDATION ====================
+ 
+ 	/**
+-	 * Get product names that don't match expected keywords
+-	 * @param {string[]} keywords - Expected keywords to match against
+-	 * @returns {string[]} Array of invalid product names
++	 * Get product names that don't contain any of the expected keywords.
++	 * @param {string[]} keywords
++	 * @returns {Promise<string[]>}
+ 	 */
+ 	async getInvalidProductNames(keywords) {
+ 		const productNames = await this.getProductNames()
+ 		if (productNames.length === 0) throw new Error("No products found")
+-
+ 		return productNames.filter(
+ 			(name) => !this.doesProductMatchKeywords(name, keywords)
+ 		)
+ 	}
+ 
+ 	/**
+-	 * Validate products contain expected keywords
+-	 * @param {string[]} keywords - Expected keywords to validate
+-	 * @returns {object} Validation result with status and invalid products
+-	 */
+-	async validateProductsContainKeywords(keywords) {
+-		const productNames = await this.getProductNames()
+-		if (productNames.length === 0) {
+-			throw new Error("No hay productos para validar")
+-		}
+-
+-		const invalidProducts = await this.getInvalidProductNames(keywords)
+-
+-		return {
+-			valid: invalidProducts.length === 0,
+-			invalidProducts,
+-			keywords
+-		}
+-	}
+-
+-	/**
+-	 * Check if product name matches any of the keywords (case-insensitive)
+-	 * @param {string} productName - Product name to check
+-	 * @param {string[]} keywords - Keywords to match against
+-	 * @returns {boolean} True if product name matches any keyword
++	 * Case-insensitive keyword match against a product name.
++	 * @param {string} productName
++	 * @param {string[]} keywords
++	 * @returns {boolean}
+ 	 */
+ 	doesProductMatchKeywords(productName, keywords) {
+ 		const normalizedName = productName.trim().toLowerCase()
+-		const normalizedKeywords = keywords.map((k) => k.toLowerCase())
+-
+-		return normalizedKeywords.some((keyword) =>
+-			normalizedName.includes(keyword)
+-		)
++		return keywords.map((k) => k.toLowerCase()).some((kw) => normalizedName.includes(kw))
+ 	}
+ 
+ 	/**
+-	 * Validate current page has only eco-friendly products
+-	 * @returns {boolean} True if all products have eco badges
++	 * Validate that all products on current page have eco badges.
++	 * @returns {Promise<boolean>}
+ 	 */
+ 	async validateCurrentPageEcoBadges() {
+ 		const ecoBadgesCount = await this.getElementCount(this.ecoBadges)
+@@ -249,127 +172,39 @@ export class ProductsPage extends BasePage {
+ 		return ecoBadgesCount === totalProducts && totalProducts > 0
+ 	}
+ 
+-	// ==================== DATA RETRIEVAL METHODS ====================
++	// ==================== DATA RETRIEVAL ====================
+ 
+-	/**
+-	 * Get count of products on current page
+-	 * @returns {number} Product count
+-	 */
++	/** @returns {Promise<number>} */
+ 	async getProductCount() {
+ 		await this.waitForElementVisible(this.productName.first())
+ 		return await this.productCards.count()
+ 	}
+ 
+ 	/**
+-	 * Get names of all products on current page
+-	 * @returns {string[]} Array of product names
++	 * Get all product names on current page.
++	 * allTextContents() has no auto-wait — waitForInitialProductsLoad
++	 * must be called before this.
++	 * @returns {Promise<string[]>}
+ 	 */
+ 	async getProductNames() {
+ 		return await this.productName.allTextContents()
+ 	}
+ 
+-	/**
+-	 * Get current page product count
+-	 * @returns {number} Number of products on current page
+-	 */
++	/** @returns {Promise<number>} */
+ 	async getCurrentPageProductCount() {
+ 		return await this.getElementCount(this.productCards)
+ 	}
+ 
+-	// ==================== STATUS CHECK METHODS ====================
++	// ==================== STATUS CHECKS ====================
+ 
+-	/**
+-	 * Check if products are visible on page
+-	 * @returns {boolean} True if products are visible
+-	 */
++	/** @returns {Promise<boolean>} */
+ 	async hasProductsVisible() {
+ 		return await this.isElementVisible(this.productName.first())
+ 	}
+ 
+-	/**
+-	 * Check if out-of-stock products exist on page
+-	 * @returns {boolean} True if out-of-stock products found
+-	 */
++	/** @returns {Promise<boolean>} */
+ 	async hasOutOfStockProducts() {
+ 		await this.waitForInitialProductsLoad()
+-		const count = await this.outOfStockLabels.count()
+-		return count > 0
+-	}
+-
+-	/**
+-	 * Verify product name matches expected name
+-	 * @param {string} expectedName - Expected product name
+-	 * @returns {boolean} True if product name matches
+-	 */
+-	async verifyProductNameMatches(expectedName) {
+-		const actualName = await this.getFirstProductName()
+-		return actualName === expectedName
+-	}
+-
+-	// ==================== COMPOSITE METHODS ====================
+-
+-	/**
+-	 * Search and select product in one operation
+-	 * @param {string} productName - Product name to search and select
+-	 */
+-	async searchAndSelectProduct(productName) {
+-		await this.searchProduct(productName)
+-		await this.waitForVisibleResult()
+-		await this.accessToProductDetail(productName)
+-	}
+-
+-	/**
+-	 * Apply multiple filters in sequence
+-	 * @param {Object} filters - Object containing filter options
+-	 * @param {string} filters.brand - Brand name to filter by
+-	 * @param {string} filters.subcategory - Subcategory name to filter by
+-	 * @param {boolean} filters.ecoFriendly - Whether to apply eco filter
+-	 */
+-	async applyMultipleFilters(filters) {
+-		const filterActions = [
+-			{
+-				condition: filters.brand,
+-				action: () => this.selectBrandByName(filters.brand)
+-			},
+-			{
+-				condition: filters.subcategory,
+-				action: () => this.clickSubcategoryCheckbox(filters.subcategory)
+-			},
+-			{
+-				condition: filters.ecoFriendly,
+-				action: () => this.clickEcoFriendlyFilter()
+-			}
+-		]
+-
+-		for (const { condition, action } of filterActions) {
+-			if (condition) await action()
+-		}
+-	}
+-
+-	/**
+-	 * Clear all active filters
+-	 * @param {string[]} brands - Array of brand names that might be active
+-	 */
+-	async clearAllFilters(brands = []) {
+-		await this.filterComponent.clearAllBrandFilters(brands)
+-		await this.filterComponent.clearEcoFilter()
+-	}
+-
+-	/**
+-	 * Navigate through all pages and collect data
+-	 * @param {Function} dataCollector - Function to collect data from each page
+-	 * @param {number} maxPages - Maximum number of pages to process
+-	 * @returns {Array} Collected data from all pages
+-	 */
+-	async collectDataAcrossPages(dataCollector, maxPages = 10) {
+-		const pageProcessor = async (pageNumber) => {
+-			await this.waitForInitialProductsLoad()
+-			return await dataCollector(pageNumber)
+-		}
+-
+-		return await this.paginationComponent.navigateThroughAllPages(
+-			pageProcessor,
+-			maxPages
+-		)
++		return (await this.outOfStockLabels.count()) > 0
+ 	}
+ }
+diff --git a/src/po/Pages/ProfilePage.js b/src/po/Pages/ProfilePage.js
+index 308390c..d57be70 100644
+--- a/src/po/Pages/ProfilePage.js
++++ b/src/po/Pages/ProfilePage.js
+@@ -1,22 +1,19 @@
++import { expect } from "@playwright/test"
++
+ /**
+  * Profile Page Object
+  * Handles interactions and data management on the user profile page
+- * Provides methods to update user profile information and handle form submissions
+  */
+ export class ProfilePage {
+ 	constructor(page) {
+ 		this.page = page
+ 
+-		// ==================== PROFILE FORM ELEMENTS ====================
+-		this.firstNameField = page.locator('[data-test="first-name"]')
+-		this.lastNameField = page.locator('[data-test="last-name"]')
+-		this.emailField = page.locator('[data-test="email"]')
+-		this.phoneField = page.locator('[data-test="phone"]')
+-		this.updateProfileButton = page.locator(
+-			'[data-test="update-profile-submit"]'
+-		)
++		this.firstNameField = page.getByTestId("first-name")
++		this.lastNameField = page.getByTestId("last-name")
++		this.emailField = page.getByTestId("email")
++		this.phoneField = page.getByTestId("phone")
++		this.updateProfileButton = page.getByTestId("update-profile-submit")
+ 
+-		// ==================== MESSAGE ELEMENTS ====================
+ 		this.successMessage = page
+ 			.getByRole("alert")
+ 			.filter({ hasText: /successfully updated/i })
+@@ -30,15 +27,17 @@ export class ProfilePage {
+ 	// ==================== FORM INTERACTION METHODS ====================
+ 
+ 	/**
+-	 * Fill phone number field with specified number
+-	 * @param {string} number - Phone number to input
++	 * Fill phone number field.
++	 * fill() auto-waits for visibility — no explicit waitFor needed.
++	 * @param {string} number
+ 	 */
+ 	async fillPhoneNumber(number) {
+ 		await this.phoneField.fill(number)
+ 	}
+ 
+ 	/**
+-	 * Submit profile changes
++	 * Submit profile changes.
++	 * click() auto-waits for visibility and enabled state.
+ 	 */
+ 	async submitProfileChanges() {
+ 		await this.updateProfileButton.click()
+@@ -47,22 +46,29 @@ export class ProfilePage {
+ 	// ==================== WAIT METHODS ====================
+ 
+ 	/**
+-	 * Wait for profile data to load completely
++	 * Wait for profile data to load completely.
++	 *
++	 * Este waitFor es necesario y legítimo: no hay acción de Playwright
++	 * posterior que dispare auto-wait. Esperamos que Angular popule el campo
++	 * con los datos del usuario antes de que el test los sobreescriba.
++	 * Sin esta espera, fill() limpiaría un campo vacío y la validación
++	 * posterior de generateValidUser().phone fallaría.
+ 	 */
+ 	async waitForProfileDataLoaded() {
+ 		await this.phoneField.waitFor({ state: "visible", timeout: 10000 })
+-		await this.page.waitForTimeout(2000)
++		await expect(this.phoneField).not.toHaveValue("", { timeout: 10000 })
+ 	}
+ 
+ 	// ==================== COMPOSITE METHODS ====================
+ 
+ 	/**
+ 	 * Complete phone number update flow
+-	 * @param {string} number - New phone number to set
+-	 * @param {boolean} autoSubmit - Whether to auto-submit the form (default: true)
++	 * @param {string} number
++	 * @param {boolean} autoSubmit
+ 	 */
+ 	async updatePhoneNumber(number, autoSubmit = true) {
+ 		await this.waitForProfileDataLoaded()
++		await this.phoneField.clear()
+ 		await this.fillPhoneNumber(number)
+ 		if (autoSubmit) {
+ 			await this.submitProfileChanges()
+diff --git a/src/po/Pages/SignInPage.js b/src/po/Pages/SignInPage.js
+index d4f63b9..2c591c1 100644
+--- a/src/po/Pages/SignInPage.js
++++ b/src/po/Pages/SignInPage.js
+@@ -10,9 +10,11 @@ export class SignInPage {
+ 		this.page = page
+ 
+ 		// ==================== LOGIN FORM ELEMENTS ====================
+-		this.emailField = page.locator('[data-test="email"]')
+-		this.passwordField = page.locator('[data-test="password"]')
+-		this.logInButton = page.locator("input.btnSubmit")
++		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
++		this.emailField = page.getByTestId("email")
++		this.passwordField = page.getByTestId("password")
++		// getByRole es preferido sobre selectores CSS como "input.btnSubmit"
++		this.logInButton = page.getByRole("button", { name: "Login" })
+ 	}
+ 
+ 	// ==================== NAVIGATION METHODS ====================
+@@ -31,7 +33,6 @@ export class SignInPage {
+ 	 * @param {string} email - Email address to input
+ 	 */
+ 	async fillEmail(email) {
+-		await this.emailField.waitFor({ state: "visible", timeout: 10000 })
+ 		await this.emailField.fill(email)
+ 	}
+ 
+@@ -40,7 +41,6 @@ export class SignInPage {
+ 	 * @param {string} password - Password to input
+ 	 */
+ 	async fillPassword(password) {
+-		await this.passwordField.waitFor({ state: "visible", timeout: 10000 })
+ 		await this.passwordField.fill(password)
+ 	}
+ 
+@@ -48,7 +48,6 @@ export class SignInPage {
+ 	 * Click login button to submit form
+ 	 */
+ 	async clickLogInButton() {
+-		await this.logInButton.waitFor({ state: "visible", timeout: 15000 })
+ 		await this.logInButton.click()
+ 	}
+ 
+diff --git a/src/po/Pages/SignUpPage.js b/src/po/Pages/SignUpPage.js
+index ab8553e..17ba115 100644
+--- a/src/po/Pages/SignUpPage.js
++++ b/src/po/Pages/SignUpPage.js
+@@ -9,21 +9,25 @@ export class SignUpPage {
+ 	constructor(page) {
+ 		this.page = page
+ 
+-		// Determine timeout based on environment
+-		this.timeout = process.env.CI ? 180000 : 30000 // 3min in CI, 30s locally
++		this.timeout = process.env.CI ? 180000 : 30000
+ 
+ 		// ==================== REGISTRATION FORM ELEMENTS ====================
+-		this.firstNameField = page.locator('[data-test="first-name"]')
+-		this.lastNameField = page.locator('[data-test="last-name"]')
+-		this.dateOfBirthField = page.locator('[data-test="dob"]')
+-		this.streetField = page.locator('[data-test="street"]')
+-		this.postalCodeField = page.locator('[data-test="postal_code"]')
+-		this.cityField = page.locator('[data-test="city"]')
+-		this.stateField = page.locator('[data-test="state"]')
+-		this.countryDropdown = page.locator("#country")
+-		this.phoneField = page.locator('[data-test="phone"]')
+-		this.emailField = page.locator('[data-test="email"]')
+-		this.passwordField = page.locator('[data-test="password"]')
++		// getByLabel es la práctica recomendada para inputs de formulario,
++		// ya que refleja cómo los usuarios y lectores de pantalla identifican los campos.
++		// getByTestId se usa como fallback donde no hay label asociado claro.
++		this.firstNameField = page.getByLabel("First name")
++		this.lastNameField = page.getByLabel("Last name")
++		this.dateOfBirthField = page.getByTestId("dob")
++		this.streetField = page.getByLabel("Street")
++		this.postalCodeField = page.getByTestId("postal_code")
++		this.houseNumberField = page.getByLabel("House number")
++		this.cityField = page.getByLabel("City")
++		this.stateField = page.getByLabel("State")
++		// <select> sin label semántico claro → getByRole con name o getByTestId
++		this.countryDropdown = page.getByRole("combobox", { name: /country/i })
++		this.phoneField = page.getByLabel("Phone")
++		this.emailField = page.getByLabel("Email address")
++		this.passwordField = page.getByLabel("Password")
+ 		this.registerButton = page.getByRole("button", { name: "Register" })
+ 	}
+ 
+@@ -42,17 +46,14 @@ export class SignUpPage {
+ 	 * Complete user registration with provided data
+ 	 * @param {object} userData - User registration data object
+ 	 */
+-
+ 	async completeRegistration(userData) {
+-		// Wait for form to be ready before filling
+-		await this.firstNameField.waitFor({ state: "visible", timeout: this.timeout })
+-
+ 		const fields = [
+ 			{ locator: this.firstNameField, value: userData.firstName },
+ 			{ locator: this.lastNameField, value: userData.lastName },
+ 			{ locator: this.dateOfBirthField, value: userData.dateOfBirth },
+ 			{ locator: this.streetField, value: userData.address },
+ 			{ locator: this.postalCodeField, value: userData.postcode },
++			{ locator: this.houseNumberField, value: userData.houseNumber },
+ 			{ locator: this.cityField, value: userData.city },
+ 			{ locator: this.stateField, value: userData.state },
+ 			{ locator: this.phoneField, value: userData.phone },
+@@ -60,17 +61,13 @@ export class SignUpPage {
+ 			{ locator: this.passwordField, value: userData.password }
+ 		]
+ 
+-		// Fill all form fields with user data
+ 		for (const { locator, value } of fields) {
+ 			await locator.fill(value)
+ 		}
+ 
+-		// Select country from dropdown and submit registration
+ 		await this.countryDropdown.selectOption(userData.country)
+-		await this.registerButton.waitFor({ state: "visible", timeout: 10000 })
+ 		await this.registerButton.click()
+ 
+-		// Wait for redirect to login page after successful registration
+ 		await this.page.waitForURL("**/auth/login", {
+ 			waitUntil: "load",
+ 			timeout: 30000

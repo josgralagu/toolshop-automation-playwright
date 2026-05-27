@@ -1,9 +1,8 @@
 // ====================================================================
-// TEST COMMANDS & UTILITY FUNCTIONS - REFACTORED VERSION
+// TEST COMMANDS & UTILITY FUNCTIONS
 // ====================================================================
 // Reusable command functions for common test actions
 // Centralizes complex logic and improves test maintainability
-// Refactored to use improved Page Object Model structure
 // ====================================================================
 
 import { expect } from "@playwright/test"
@@ -14,16 +13,13 @@ import { languageMap } from "./testData.js"
 
 /**
  * Update user profile phone number
- * Navigates to profile page and updates the phone number field
- *
- * @param {Page} page - Playwright page object
- * @param {string} phoneNumber - New phone number to set
+ * @param {import('@playwright/test').Page} page
+ * @param {string} phoneNumber
  */
 export async function updateProfilePhoneNumber(page, phoneNumber) {
 	const myAccountPage = pages("myaccount", page)
 	const profilePage = pages("profile", page)
 
-	// Navigate to profile and update phone number
 	await myAccountPage.accessToProfile()
 	await profilePage.updatePhoneNumber(phoneNumber)
 }
@@ -31,29 +27,34 @@ export async function updateProfilePhoneNumber(page, phoneNumber) {
 // ==================== PRODUCT NAVIGATION & SEARCH SECTION ====================
 
 /**
- * Navigate to products page and wait for initial load completion
- * Primary entry point for product-related test scenarios
+ * Navigate to products page and wait for initial load completion.
+ *
+ * Corrección: se eliminó la llamada duplicada a waitForInitialProductsLoad().
+ * navigateToProductsPage() ya la invoca internamente.
+ *
+ * @param {import('@playwright/test').Page} page
  */
 export async function navigateToProductsPage(page) {
 	const productsPage = pages("products", page)
 	await productsPage.navigateToProductsPage()
-	await productsPage.waitForInitialProductsLoad()
 }
 
 /**
  * Navigate to product detail page for specified product
- * Simplified workflow for quick product access
+ * @param {import('@playwright/test').Page} page
+ * @param {string} productName
  */
 export async function goToProductDetail(page, productName) {
 	const productsPage = pages("products", page)
 	await productsPage.navigateToProductsPage()
-	await productsPage.waitForInitialProductsLoad()
 	await productsPage.searchAndSelectProduct(productName)
 }
 
 /**
- * Search and select product from current products page
- * Assumes user is already on products page
+ * Search and select product from current products page.
+ * Assumes user is already on products page.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} productName
  */
 export async function searchAndSelectProduct(page, productName) {
 	const productsPage = pages("products", page)
@@ -64,7 +65,9 @@ export async function searchAndSelectProduct(page, productName) {
 
 /**
  * Complete workflow to add product to cart with specified quantity
- * Includes navigation, search, product selection, and cart addition
+ * @param {import('@playwright/test').Page} page
+ * @param {string} productName
+ * @param {number} quantity
  */
 export async function addProductToCart(page, productName, quantity = 1) {
 	const productsPage = pages("products", page)
@@ -77,24 +80,18 @@ export async function addProductToCart(page, productName, quantity = 1) {
 }
 
 /**
- * Add multiple products to cart and collect their data
- * Iterates through product list, adds each to cart, and collects price information
+ * Add multiple products to cart and collect their data.
  *
- * @param {Page} page - Playwright page object
- * @param {string[]} productNames - Array of product names to add
- * @param {number} qtyPerProduct - Quantity of each product to add
- * @returns {Array} Array of product objects with name, quantity, and price
+ * @param {import('@playwright/test').Page} page
+ * @param {string[]} productNames
+ * @param {number} qtyPerProduct
+ * @returns {Promise<Array<{name: string, qty: number, price: number}>>}
  */
-export async function addProductsAndCollectData(
-	page,
-	productNames,
-	qtyPerProduct
-) {
+export async function addProductsAndCollectData(page, productNames, qtyPerProduct) {
 	const detailPage = pages("productdetail", page)
 	const products = []
 
-	for (let i = 0; i < productNames.length; i++) {
-		const name = productNames[i]
+	for (const name of productNames) {
 		await addProductToCart(page, name, qtyPerProduct)
 		const price = await detailPage.getProductPrice()
 		products.push({ name, qty: qtyPerProduct, price })
@@ -103,17 +100,22 @@ export async function addProductsAndCollectData(
 }
 
 /**
- * Retrieve comprehensive cart data including products, quantities, and totals
- * Navigates to cart page and collects all relevant cart information
+ * Retrieve comprehensive cart data including products, quantities, and totals.
  *
- * @param {Page} page - Playwright page object
- * @returns {Object} Cart data object with names, quantities, prices, line totals, and cart total
+ * Corrección: se navega al cart usando page.goto() directamente en lugar de
+ * depender de detailPage.goToCartViaHeaderLink(), que asume que el usuario
+ * está en la última página de detalle. Esto hace la función más robusta
+ * e independiente del estado anterior.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<{names: string[], quantities: number[], prices: number[], lineTotals: number[], cartTotal: number}>}
  */
 export async function getCartData(page) {
-	const detailPage = pages("productdetail", page)
 	const cartPage = pages("cart", page)
 
-	await detailPage.goToCartViaHeaderLink()
+	await page.goto("https://practicesoftwaretesting.com/checkout", {
+		waitUntil: "domcontentloaded"
+	})
 	await cartPage.waitForCartLoad()
 
 	return {
@@ -128,53 +130,32 @@ export async function getCartData(page) {
 // ==================== CART CALCULATIONS & VALIDATIONS SECTION ====================
 
 /**
- * Calculate expected subtotal from product list
- * Sums the product of price and quantity for all products
- *
- * @param {Array} products - Array of product objects with price and quantity
- * @returns {number} Calculated subtotal
+ * @param {Array<{price: number, qty: number}>} products
+ * @returns {number}
  */
 export function calculateExpectedSubtotal(products) {
 	return products.reduce((sum, p) => sum + p.price * p.qty, 0)
 }
 
-/**
- * Extract product names from product array
- *
- * @param {Array} products - Array of product objects
- * @returns {string[]} Array of product names
- */
+/** @param {Array<{name: string}>} products */
 export function getProductNames(products) {
 	return products.map((p) => p.name)
 }
 
-/**
- * Extract product quantities from product array
- *
- * @param {Array} products - Array of product objects
- * @returns {number[]} Array of product quantities
- */
+/** @param {Array<{qty: number}>} products */
 export function getProductQuantities(products) {
 	return products.map((p) => p.qty)
 }
 
-/**
- * Extract product prices from product array
- *
- * @param {Array} products - Array of product objects
- * @returns {number[]} Array of product prices
- */
+/** @param {Array<{price: number}>} products */
 export function getProductPrices(products) {
 	return products.map((p) => p.price)
 }
 
 /**
- * Calculate differences between actual and expected line totals
- * Compares cart line totals with calculated expected values
- *
- * @param {number[]} cartLineTotals - Actual line totals from cart
- * @param {Array} products - Array of product objects for expected calculation
- * @returns {Array} Array of difference objects with index, actual, expected, and diff
+ * @param {number[]} cartLineTotals
+ * @param {Array<{price: number, qty: number}>} products
+ * @returns {Array<{index: number, actual: number, expected: number, diff: number}>}
  */
 export function getLineTotalsDifferences(cartLineTotals, products) {
 	return cartLineTotals.map((actual, i) => {
@@ -183,33 +164,27 @@ export function getLineTotalsDifferences(cartLineTotals, products) {
 	})
 }
 
-/**
- * Sum all line total differences
- *
- * @param {Array} differences - Array of difference objects from getLineTotalsDifferences
- * @returns {number} Total sum of all differences
- */
+/** @param {Array<{diff: number}>} differences */
 export function sumLineTotalsDifferences(differences) {
 	return differences.reduce((sum, item) => sum + item.diff, 0)
 }
 
 /**
- * Calculate total line totals error for cart validation
- *
- * @param {number[]} cartLineTotals - Actual line totals from cart
- * @param {Array} products - Array of product objects for expected calculation
- * @returns {number} Total error across all line items
+ * @param {number[]} cartLineTotals
+ * @param {Array<{price: number, qty: number}>} products
+ * @returns {number}
  */
 export function calculateLineTotalsError(cartLineTotals, products) {
-	const differences = getLineTotalsDifferences(cartLineTotals, products)
-	return sumLineTotalsDifferences(differences)
+	return sumLineTotalsDifferences(getLineTotalsDifferences(cartLineTotals, products))
 }
 
 // ==================== FILTER OPERATIONS SECTION ====================
 
 /**
- * Apply category filter using navigation menu
- * Supported categories: 'Hand Tools', 'Power Tools', 'Other'
+ * Apply category filter using navigation menu.
+ * Supported: 'Hand Tools', 'Power Tools', 'Other'
+ * @param {import('@playwright/test').Page} page
+ * @param {string} categoryName
  */
 export async function filterByCategory(page, categoryName) {
 	const basePage = pages("base", page)
@@ -229,7 +204,8 @@ export async function filterByCategory(page, categoryName) {
 
 /**
  * Apply subcategory filter using checkbox selection
- * Includes wait for complete filter cycle
+ * @param {import('@playwright/test').Page} page
+ * @param {string} subcategoryName
  */
 export async function filterBySubcategory(page, subcategoryName) {
 	const productsPage = pages("products", page)
@@ -240,7 +216,8 @@ export async function filterBySubcategory(page, subcategoryName) {
 
 /**
  * Remove specific subcategory filter
- * Useful for test cleanup between scenarios
+ * @param {import('@playwright/test').Page} page
+ * @param {string} subcategoryName
  */
 export async function clearSubcategoryFilter(page, subcategoryName) {
 	const productsPage = pages("products", page)
@@ -251,7 +228,8 @@ export async function clearSubcategoryFilter(page, subcategoryName) {
 
 /**
  * Apply brand filter by selecting checkbox
- * Includes filter cycle completion wait
+ * @param {import('@playwright/test').Page} page
+ * @param {string} brandName
  */
 export async function filterByBrand(page, brandName) {
 	const productsPage = pages("products", page)
@@ -260,7 +238,8 @@ export async function filterByBrand(page, brandName) {
 
 /**
  * Remove specific brand filter selection
- * Useful for test cleanup between scenarios
+ * @param {import('@playwright/test').Page} page
+ * @param {string} brandName
  */
 export async function deselectBrand(page, brandName) {
 	const productsPage = pages("products", page)
@@ -269,7 +248,7 @@ export async function deselectBrand(page, brandName) {
 
 /**
  * Activate eco-friendly product filter
- * Filters products to show only eco-certified items
+ * @param {import('@playwright/test').Page} page
  */
 export async function filterByEcoFriendly(page) {
 	const productsPage = pages("products", page)
@@ -277,8 +256,10 @@ export async function filterByEcoFriendly(page) {
 }
 
 /**
- * Apply multiple filters in sequence
- * Combines category and brand filtering
+ * Apply multiple filters in sequence (category + brand)
+ * @param {import('@playwright/test').Page} page
+ * @param {string} category
+ * @param {string} brand
  */
 export async function applyMultipleFilters(page, category, brand) {
 	await filterByCategory(page, category)
@@ -288,15 +269,13 @@ export async function applyMultipleFilters(page, category, brand) {
 // ==================== FILTER VALIDATIONS SECTION ====================
 
 /**
- * Basic validation for multiple filter combinations
- * Verifies category and brand filters produce expected results
+ * @param {import('@playwright/test').Page} page
+ * @param {string} category
+ * @param {string} brand
+ * @param {string[]} keywords
+ * @returns {Promise<string[]>}
  */
-export async function validateMultipleFiltersBasic(
-	page,
-	category,
-	brand,
-	keywords
-) {
+export async function validateMultipleFiltersBasic(page, category, brand, keywords) {
 	const productsPage = pages("products", page)
 	const errors = []
 
@@ -308,11 +287,8 @@ export async function validateMultipleFiltersBasic(
 		return errors
 	}
 
-	const firstProductName = await productsPage.productName
-		.first()
-		.textContent()
+	const firstProductName = await productsPage.productName.first().textContent()
 
-	// Use the provided keywords parameter instead of dynamic import
 	const productMatchesCategory = keywords.some((keyword) =>
 		firstProductName.toLowerCase().includes(keyword.toLowerCase())
 	)
@@ -327,53 +303,39 @@ export async function validateMultipleFiltersBasic(
 }
 
 /**
- * Validate multiple filters and navigate to product details
- * Combines validation with navigation workflow
+ * @param {import('@playwright/test').Page} page
+ * @param {string} category
+ * @param {string} brand
+ * @param {string[]} keywords
+ * @returns {Promise<string[]>}
  */
-export async function validateMultipleFiltersAndNavigate(
-	page,
-	category,
-	brand,
-	keywords
-) {
-	const errors = await validateMultipleFiltersBasic(
-		page,
-		category,
-		brand,
-		keywords
-	)
+export async function validateMultipleFiltersAndNavigate(page, category, brand, keywords) {
+	const errors = await validateMultipleFiltersBasic(page, category, brand, keywords)
 	if (errors.length === 0) {
-		await page.click("a.card")
+		await page.locator("a.card").first().click()
 		await page.waitForURL(/\/product\//, { timeout: 15000 })
 	}
 	return errors
 }
 
 /**
- * Validate and navigate to product details with category-specific keywords
- * Wrapper function for category-specific validation workflows
+ * @param {import('@playwright/test').Page} page
+ * @param {string} category
+ * @param {string} brand
+ * @param {Object} categoryKeywords
+ * @returns {Promise<string[]>}
  */
-export async function validateAndNavigateToProductDetails(
-	page,
-	category,
-	brand,
-	categoryKeywords
-) {
+export async function validateAndNavigateToProductDetails(page, category, brand, categoryKeywords) {
 	const categoryKey =
 		category.charAt(0).toLowerCase() + category.slice(1).replace(/\s+/g, "")
 	const keywords = categoryKeywords[categoryKey]
-	const errors = await validateMultipleFiltersAndNavigate(
-		page,
-		category,
-		brand,
-		keywords
-	)
-	return errors
+	return validateMultipleFiltersAndNavigate(page, category, brand, keywords)
 }
 
 /**
  * Verify product details page loads correctly
- * Validates product data availability and brand information
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<string>} Brand name trimmed
  */
 export async function verifyProductDetails(page) {
 	const detailPage = pages("productdetail", page)
@@ -386,15 +348,12 @@ export async function verifyProductDetails(page) {
 
 /**
  * Generic pagination validation across all result pages
- * Executes validation function on each page of results
- * @param {Function} validatePageFn - Function returning array of validation errors
- * @param {number} maxPages - Safety limit to prevent infinite loops
+ * @param {import('@playwright/test').Page} page
+ * @param {Function} validatePageFn
+ * @param {number} maxPages
+ * @returns {Promise<string[]>}
  */
-export async function validateAcrossPagination(
-	page,
-	validatePageFn,
-	maxPages = 10
-) {
+export async function validateAcrossPagination(page, validatePageFn, maxPages = 10) {
 	const productsPage = pages("products", page)
 	const allErrors = []
 	let currentPage = 1
@@ -413,58 +372,50 @@ export async function validateAcrossPagination(
 	}
 
 	if (currentPage >= maxPages) {
-		allErrors.push(
-			`Reached maximum page limit (${maxPages}) - possible infinite loop`
-		)
+		allErrors.push(`Reached maximum page limit (${maxPages}) - possible infinite loop`)
 	}
 
 	return allErrors
 }
 
 /**
- * Validate no out-of-stock products across all pagination pages
- * Comprehensive stock availability check for filtered results
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<string[]>}
  */
-// eslint-disable-next-line require-await
 export async function validateNoOutOfStockAcrossPagination(page) {
 	return validateAcrossPagination(page, async (productsPage) => {
 		const hasOutOfStock = await productsPage.hasOutOfStockProducts()
-		if (hasOutOfStock) {
-			return ["Found out-of-stock products on current page"]
-		}
-		return []
+		return hasOutOfStock ? ["Found out-of-stock products on current page"] : []
 	})
 }
 
 /**
- * Validate product names contain expected keywords across pagination
- * Ensures filtered results match category or subcategory criteria
+ * @param {import('@playwright/test').Page} page
+ * @param {string[]} keywords
+ * @returns {Promise<string[]>}
  */
-// eslint-disable-next-line require-await
 export async function validateKeywordsAcrossPagination(page, keywords) {
 	return validateAcrossPagination(page, async (productsPage) => {
 		const invalidNames = await productsPage.getInvalidProductNames(keywords)
-		if (invalidNames.length > 0) {
-			return [
-				`Found products without keywords: ${invalidNames.join(", ")}`
-			]
-		}
-		return []
+		return invalidNames.length > 0
+			? [`Found products without keywords: ${invalidNames.join(", ")}`]
+			: []
 	})
 }
 
 /**
- * Validate category keyword matching across pagination
- * Wrapper function for category-specific keyword validation
+ * @param {import('@playwright/test').Page} page
+ * @param {string[]} keywords
+ * @returns {Promise<string[]>}
  */
-// eslint-disable-next-line require-await
 export async function validateCategoryKeywords(page, keywords) {
 	return validateKeywordsAcrossPagination(page, keywords)
 }
 
 /**
- * Comprehensive brand filter validation
- * Checks product availability and stock status for brand filters
+ * @param {import('@playwright/test').Page} page
+ * @param {string} brandName
+ * @returns {Promise<string[]>}
  */
 export async function validateBrandProducts(page, brandName) {
 	const productsPage = pages("products", page)
@@ -478,27 +429,23 @@ export async function validateBrandProducts(page, brandName) {
 
 	const outOfStockErrors = await validateNoOutOfStockAcrossPagination(page)
 	errors.push(...outOfStockErrors)
-
 	return errors
 }
 
 /**
- * Subcategory filter validation with keyword matching
- * Handles both successful results and no-results scenarios
+ * @param {import('@playwright/test').Page} page
+ * @param {string} subcategoryName
+ * @param {string[]} keywords
+ * @returns {Promise<string[]>}
  */
-export async function validateSubcategoryResults(
-	page,
-	subcategoryName,
-	keywords
-) {
+export async function validateSubcategoryResults(page, subcategoryName, keywords) {
 	const productsPage = pages("products", page)
 	const errors = []
 
 	const hasProducts = await productsPage.hasProductsVisible()
 
 	if (!hasProducts) {
-		const noResultsVisible =
-			await productsPage.filterComponent.hasNoResults()
+		const noResultsVisible = await productsPage.filterComponent.hasNoResults()
 		if (!noResultsVisible) {
 			errors.push(
 				`No products found for subcategory "${subcategoryName}" but no "no results" message visible`
@@ -509,43 +456,26 @@ export async function validateSubcategoryResults(
 
 	const keywordErrors = await validateKeywordsAcrossPagination(page, keywords)
 	errors.push(...keywordErrors)
-
 	return errors
 }
 
 /**
- * Validate eco-friendly badge presence across all pagination pages
- * Ensures eco filter shows only certified products
+ * @param {import('@playwright/test').Page} page
+ * @returns {Promise<string[]>}
  */
-// eslint-disable-next-line require-await
 export async function validateEcoBadgesAcrossPagination(page) {
 	return validateAcrossPagination(page, async (productsPage) => {
 		const allEco = await productsPage.validateCurrentPageEcoBadges()
-		if (!allEco) {
-			return ["Not all products have ECO badge"]
-		}
-		return []
+		return allEco ? [] : ["Not all products have ECO badge"]
 	})
 }
 
 // ==================== LANGUAGE & CONTACT ACTIONS SECTION ====================
 
 /**
- * Change contact page language using dropdown selector
- * @param {string} languageCode - Two-letter language code (DE, EN, ES, FR, NL, TR)
- */
-export async function changeLanguage(page, languageCode) {
-	const basePage = pages("base", page)
-	await basePage.navigationBar.changeLanguage(languageCode)
-}
-
-/**
- * Change language on contact page and retrieve corresponding translations
- * Combines language switching with translation data retrieval
- *
- * @param {Page} page - Playwright page object
- * @param {string} langCode - Two-letter language code (DE, EN, ES, FR, NL, TR)
- * @returns {Object} Translation object for the specified language
+ * @param {import('@playwright/test').Page} page
+ * @param {string} langCode
+ * @returns {Promise<Object>} Translation object for the specified language
  */
 export async function changeLanguageAndGetTranslations(page, langCode) {
 	const contactPage = pages("contact", page)
@@ -556,53 +486,28 @@ export async function changeLanguageAndGetTranslations(page, langCode) {
 // ==================== CONTACT FORM VALIDATIONS SECTION ====================
 
 /**
- * Validate contact form label translations
- * Comprehensive check of all form field labels against expected translations
+ * @param {import('@playwright/test').Page} page
+ * @param {Object} translations
+ * @returns {Promise<string[]>}
  */
 export async function validateContactFormLabels(page, translations) {
 	const contactPage = pages("contact", page)
 	const errors = []
 
 	const labelChecks = [
-		{
-			key: "firstName",
-			locator: contactPage.firstNameLabel,
-			expected: translations.firstNameField
-		},
-		{
-			key: "lastName",
-			locator: contactPage.lastNameLabel,
-			expected: translations.lastNameField
-		},
-		{
-			key: "email",
-			locator: contactPage.emailLabel,
-			expected: translations.emailField
-		},
-		{
-			key: "subject",
-			locator: contactPage.subjectLabel,
-			expected: translations.subjectField
-		},
-		{
-			key: "message",
-			locator: contactPage.messageLabel,
-			expected: translations.messageField
-		},
-		{
-			key: "attachment",
-			locator: contactPage.attachmentLabel,
-			expected: translations.attachmentLabel
-		}
+		{ key: "firstName", locator: contactPage.firstNameLabel, expected: translations.firstNameField },
+		{ key: "lastName", locator: contactPage.lastNameLabel, expected: translations.lastNameField },
+		{ key: "email", locator: contactPage.emailLabel, expected: translations.emailField },
+		{ key: "subject", locator: contactPage.subjectLabel, expected: translations.subjectField },
+		{ key: "message", locator: contactPage.messageLabel, expected: translations.messageField },
+		{ key: "attachment", locator: contactPage.attachmentLabel, expected: translations.attachmentLabel }
 	]
 
 	for (const { key, locator, expected } of labelChecks) {
 		try {
 			const actual = await locator.textContent()
 			if (actual.trim() !== expected) {
-				errors.push(
-					`Label ${key}: expected "${expected}", got "${actual}"`
-				)
+				errors.push(`Label ${key}: expected "${expected}", got "${actual.trim()}"`)
 			}
 		} catch {
 			errors.push(`Label ${key}: element not found`)
@@ -613,47 +518,36 @@ export async function validateContactFormLabels(page, translations) {
 }
 
 /**
- * Validate contact form placeholder translations
- * Checks both input placeholders and select option text
+ * @param {import('@playwright/test').Page} page
+ * @param {Object} translations
+ * @returns {Promise<string[]>}
  */
 export async function validateContactFormPlaceholders(page, translations) {
 	const errors = []
 
-	// Input field placeholders validation
+	// getByTestId requiere testIdAttribute: 'data-test' en playwright.config.js
 	const inputPlaceholders = [
-		{
-			selector: '[data-test="first-name"]',
-			expected: translations.firstNamePlaceholder
-		},
-		{
-			selector: '[data-test="last-name"]',
-			expected: translations.lastNamePlaceholder
-		},
-		{
-			selector: '[data-test="email"]',
-			expected: translations.emailPlaceholder
-		}
+		{ locator: page.getByTestId("first-name"), key: "first-name", expected: translations.firstNamePlaceholder },
+		{ locator: page.getByTestId("last-name"), key: "last-name", expected: translations.lastNamePlaceholder },
+		{ locator: page.getByTestId("email"), key: "email", expected: translations.emailPlaceholder }
 	]
 
-	for (const { selector, expected } of inputPlaceholders) {
+	for (const { locator, key, expected } of inputPlaceholders) {
 		try {
-			const actual = await page
-				.locator(selector)
-				.getAttribute("placeholder")
+			const actual = await locator.getAttribute("placeholder")
 			if ((actual || "").trim() !== expected) {
-				errors.push(
-					`Input placeholder ${selector}: expected "${expected}", got "${actual}"`
-				)
+				errors.push(`Input placeholder [${key}]: expected "${expected}", got "${actual}"`)
 			}
 		} catch {
-			errors.push(`Input placeholder ${selector}: element not found`)
+			errors.push(`Input placeholder [${key}]: element not found`)
 		}
 	}
 
 	// Select dropdown placeholder validation
 	try {
 		const selectedOption = await page
-			.locator('[data-test="subject"] option[selected]')
+			.getByTestId("subject")
+			.locator("option[selected]")
 			.textContent()
 		if ((selectedOption || "").trim() !== translations.subjectPlaceholder) {
 			errors.push(
@@ -668,18 +562,28 @@ export async function validateContactFormPlaceholders(page, translations) {
 }
 
 /**
- * Validate contact form submit button translation
- * Checks button value attribute against expected translation
+ * Validate contact form submit button translation.
+ *
+ * El elemento es <input type="submit" value="Senden">, no un <button>.
+ * Un <input type="submit"> muestra su texto a través del atributo "value",
+ * no de textContent() (que siempre retorna "" para inputs).
+ * Se usa inputValue() que es el método correcto de Playwright para leer
+ * el valor de cualquier elemento input.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {Object} translations
+ * @returns {Promise<string[]>}
  */
 export async function validateContactSubmitButton(page, translations) {
 	const contactPage = pages("contact", page)
 	const errors = []
 
 	try {
-		const actualValue = await contactPage.submitButton.getAttribute("value")
-		if (actualValue !== translations.submitButton) {
+		// inputValue() lee el atributo "value" del <input type="submit">
+		const actualText = (await contactPage.submitButton.inputValue()).trim()
+		if (actualText !== translations.submitButton) {
 			errors.push(
-				`Submit button: expected "${translations.submitButton}", got "${actualValue}"`
+				`Submit button: expected "${translations.submitButton}", got "${actualText}"`
 			)
 		}
 	} catch {
@@ -690,35 +594,21 @@ export async function validateContactSubmitButton(page, translations) {
 }
 
 /**
- * Validate navigation elements translations on contact page
- * Checks main heading and all navigation links against expected translations
- *
- * @param {Page} page - Playwright page object
- * @param {Object} translations - Translation object with navigation text
+ * @param {import('@playwright/test').Page} page
+ * @param {Object} translations
  */
 export async function validateNavigationElements(page, translations) {
 	const contactPage = pages("contact", page)
 	await expect(contactPage.mainHeading).toHaveText(translations.mainHeading)
-	await expect(contactPage.navigationBar.homeLink).toHaveText(
-		translations.homeLink
-	)
-	await expect(contactPage.navigationBar.categoriesLink).toHaveText(
-		translations.categoriesLink
-	)
-	await expect(contactPage.navigationBar.contactLink).toHaveText(
-		translations.contactLink
-	)
-	await expect(contactPage.navigationBar.signInLink).toHaveText(
-		translations.signInLink
-	)
+	await expect(contactPage.navigationBar.homeLink).toHaveText(translations.homeLink)
+	await expect(contactPage.navigationBar.categoriesLink).toHaveText(translations.categoriesLink)
+	await expect(contactPage.navigationBar.contactLink).toHaveText(translations.contactLink)
+	await expect(contactPage.navigationBar.signInLink).toHaveText(translations.signInLink)
 }
 
 /**
- * Validate warning and info text translations on contact page
- * Uses substring matching for dynamic content validation
- *
- * @param {Page} page - Playwright page object
- * @param {Object} translations - Translation object with warning and info text
+ * @param {import('@playwright/test').Page} page
+ * @param {Object} translations
  */
 export async function validateLabelsAndText(page, translations) {
 	const contactPage = pages("contact", page)
@@ -732,19 +622,20 @@ export async function validateLabelsAndText(page, translations) {
 }
 
 /**
- * Comprehensive contact form translation validation
- * Combines label, placeholder, and button translation checks
+ * Comprehensive contact form translation validation.
  *
- * @param {Page} page - Playwright page object
- * @param {Object} translations - Complete translation object for contact form
- * @returns {Array} Combined array of all translation validation errors
+ * Mejora: las tres validaciones se ejecutan en paralelo con Promise.all()
+ * en lugar de secuencialmente, reduciendo el tiempo total del test.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {Object} translations
+ * @returns {Promise<string[]>}
  */
 export async function validateFormTranslations(page, translations) {
-	const labelErrors = await validateContactFormLabels(page, translations)
-	const placeholderErrors = await validateContactFormPlaceholders(
-		page,
-		translations
-	)
-	const buttonErrors = await validateContactSubmitButton(page, translations)
+	const [labelErrors, placeholderErrors, buttonErrors] = await Promise.all([
+		validateContactFormLabels(page, translations),
+		validateContactFormPlaceholders(page, translations),
+		validateContactSubmitButton(page, translations)
+	])
 	return [...labelErrors, ...placeholderErrors, ...buttonErrors]
 }

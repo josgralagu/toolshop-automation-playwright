@@ -5,9 +5,11 @@ export class ContactPage extends BasePage {
 		super(page)
 
 		// ==================== MAIN CONTENT ELEMENTS ====================
-		this.mainHeading = page.locator("h3")
+		this.mainHeading = page.getByRole("heading", { level: 3 })
 
 		// ==================== FORM LABEL ELEMENTS ====================
+		// Los labels se localizan por su atributo `for`, que los vincula al input.
+		// getByRole("label") no existe en Playwright — se mantiene locator con atributo for.
 		this.firstNameLabel = page.locator('label[for="first_name"]')
 		this.lastNameLabel = page.locator('label[for="last_name"]')
 		this.emailLabel = page.locator('label[for="email"]')
@@ -16,17 +18,19 @@ export class ContactPage extends BasePage {
 		this.attachmentLabel = page.locator('label[for="attachment"]')
 
 		// ==================== FORM INPUT ELEMENTS ====================
-		this.firstNameInput = page.locator('[data-test="first-name"]')
-		this.lastNameInput = page.locator('[data-test="last-name"]')
-		this.emailInput = page.locator('[data-test="email"]')
-		this.subjectSelect = page.locator('[data-test="subject"]')
-		this.messageTextarea = page.locator('[data-test="message"]')
+		// getByLabel es la práctica recomendada para inputs con label asociado
+		this.firstNameInput = page.getByLabel("First name")
+		this.lastNameInput = page.getByLabel("Last name")
+		this.emailInput = page.getByLabel("Email address")
+		// getByRole("combobox") para selects con nombre accesible
+		this.subjectSelect = page.getByRole("combobox", { name: /subject/i })
+		this.messageTextarea = page.getByLabel("Message")
 
 		// ==================== BUTTON AND MESSAGE ELEMENTS ====================
-		this.submitButton = page.locator('[data-test="contact-submit"]')
+		this.submitButton = page.getByTestId("contact-submit")
 		this.warningLabel = page.locator("#attachmentHelp")
 
-		// Robust selector for info label that works across all languages
+		// Selector robusto para el info label
 		this.infoLabel = page.locator(
 			'p:has(a[href*="github.com/testsmith-io/practice-software-testing"])'
 		)
@@ -47,7 +51,7 @@ export class ContactPage extends BasePage {
 
 	/**
 	 * Get normalized info text with extra spaces removed
-	 * @returns {string} Normalized info text
+	 * @returns {Promise<string>} Normalized info text
 	 */
 	async getNormalizedInfoText() {
 		const text = await this.infoLabel.textContent()

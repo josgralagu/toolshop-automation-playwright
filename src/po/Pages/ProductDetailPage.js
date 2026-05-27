@@ -1,93 +1,80 @@
 /**
  * Product Detail Page Object
  * Handles interactions and data retrieval from the product detail page
- * Provides methods to manage product quantities, add to cart, and add to favorites
  */
 export class ProductDetailPage {
 	constructor(page) {
 		this.page = page
 
 		// ==================== PRODUCT INFORMATION ELEMENTS ====================
-		this.productPrice = page.locator('[data-test="unit-price"]')
-		this.productDescription = page.locator(
-			'[data-test="product-description"]'
-		)
-		this.brandBadge = page.locator('[aria-label="brand"]')
+		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
+		this.productPrice = page.getByTestId("unit-price")
+		this.productDescription = page.getByTestId("product-description")
 
 		// ==================== QUANTITY MANAGEMENT ELEMENTS ====================
-		this.quantityInput = page.locator('[data-test="quantity"]')
-		this.increaseButton = page.locator('[data-test="increase-quantity"]')
+		this.quantityInput = page.getByTestId("quantity")
+		this.increaseButton = page.getByTestId("increase-quantity")
 
 		// ==================== ACTION BUTTONS ====================
-		this.addToCartButton = page.locator('[data-test="add-to-cart"]')
-		this.addToFavoritesButton = page.locator(
-			'[data-test="add-to-favorites"]'
-		)
-		this.cartLink = page.locator('[data-test="nav-cart"]')
+		this.addToCartButton = page.getByTestId("add-to-cart")
+		this.addToFavoritesButton = page.getByTestId("add-to-favorites")
+		this.cartLink = page.getByTestId("nav-cart")
 
 		// ==================== MESSAGE ELEMENTS ====================
+		// waitFor en mensajes es legítimo: no hay acción de Playwright
+		// posterior que dispare auto-wait en estos casos.
 		this.successMsg = page.locator("div.toast-success")
-		this.favSuccessMessage = page.locator(
-			'[aria-label="Product added to your favorites list."]'
-		)
-		this.favErrorMessage = page.locator(
-			'div[role="alert"]:has-text("Unauthorized")'
-		)
+		this.favSuccessMessage = page.getByRole("alert", {
+			name: "Product added to your favorites list."
+		})
+		this.favErrorMessage = page
+			.getByRole("alert")
+			.filter({ hasText: "Unauthorized" })
 	}
 
 	// ==================== WAIT METHODS ====================
 
 	/**
-	 * Wait for product data to load completely
+	 * Wait for product data to load completely.
+	 * Legítimo: no hay acción posterior inmediata que dispare auto-wait.
+	 * Confirma que Angular terminó de cargar los datos del producto.
 	 */
 	async waitForProductData() {
 		await this.productPrice.waitFor({ state: "visible", timeout: 10000 })
-		await this.productDescription.waitFor({
-			state: "visible",
-			timeout: 10000
-		})
+		await this.productDescription.waitFor({ state: "visible", timeout: 10000 })
 	}
 
 	/**
-	 * Wait for success message to appear and disappear
-	 * Enhanced with retry logic for flaky tests
+	 * Wait for add-to-cart success toast to appear and disappear.
 	 */
-
 	async waitForSuccessMessage() {
-		// Wait for success message to appear with increased timeout
 		await this.successMsg.waitFor({ state: "visible", timeout: 15000 })
-
-		// Wait for success message to disappear with increased timeout
 		await this.successMsg.waitFor({ state: "detached", timeout: 15000 })
 	}
 
 	/**
-	 * Wait for favorites success message to appear and disappear
+	 * Wait for add-to-favorites success alert to appear and disappear.
 	 */
 	async waitForFavSuccessMsg() {
-		await this.favSuccessMessage.waitFor({
-			state: "visible",
-			timeout: 10000
-		})
-		await this.favSuccessMessage.waitFor({
-			state: "detached",
-			timeout: 10000
-		})
+		await this.favSuccessMessage.waitFor({ state: "visible", timeout: 10000 })
+		await this.favSuccessMessage.waitFor({ state: "detached", timeout: 10000 })
 	}
 
 	// ==================== QUANTITY METHODS ====================
 
 	/**
-	 * Increase product quantity by clicking increase button
-	 * @param {number} times - Number of times to click increase button
+	 * Increase product quantity.
+	 * increaseButton.click() auto-waits for visibility.
+	 * @param {number} times
 	 */
 	async increaseQuantity(times = 1) {
-		for (let i = 0; i < times; ++i) await this.increaseButton.click()
+		for (let i = 0; i < times; i++) await this.increaseButton.click()
 	}
 
 	/**
-	 * Get current quantity value from input field
-	 * @returns {number} Current quantity
+	 * Get current quantity value from input.
+	 * inputValue() does not auto-wait for visibility, so waitFor is needed.
+	 * @returns {Promise<number>}
 	 */
 	async getCurrentQuantity() {
 		await this.quantityInput.waitFor({ state: "visible", timeout: 10000 })
@@ -97,55 +84,37 @@ export class ProductDetailPage {
 	// ==================== CART METHODS ====================
 
 	/**
-	 * Click add to cart button
-	 */
-	async clickAddToCartButton() {
-		await this.addToCartButton.waitFor({ state: "visible", timeout: 10000 })
-		await this.addToCartButton.click()
-	}
-
-	/**
-	 * Complete add to cart flow with quantity adjustment
-	 * @param {number} clicks - Number of times to increase quantity before adding
+	 * Complete add to cart flow with quantity adjustment.
+	 * @param {number} clicks - Extra clicks on increase button (total qty = clicks + 1)
 	 */
 	async addToCartByPlusClicks(clicks = 1) {
 		await this.increaseQuantity(clicks)
-		await this.clickAddToCartButton()
+		await this.addToCartButton.click()
 		await this.waitForSuccessMessage()
 	}
 
 	/**
-	 * Get product price as numeric value
-	 * @returns {number} Product price
+	 * Get product price as numeric value.
+	 * @returns {Promise<number>}
 	 */
 	async getProductPrice() {
 		const text = await this.productPrice.textContent()
 		return parseFloat(text)
 	}
 
-	/**
-	 * Navigate to cart page via header link
-	 */
-	async goToCartViaHeaderLink() {
-		await this.cartLink.click()
-		await this.page.waitForURL("**/checkout", { timeout: 15000 })
-	}
-
 	// ==================== FAVORITES METHODS ====================
 
 	/**
-	 * Click add to favorites button
+	 * Click add to favorites button.
+	 * addToFavoritesButton puede tardar en aparecer en la página de detalle
+	 * (Angular lazy loading), por eso se mantiene el timeout más alto.
 	 */
 	async clickAddToFavorites() {
-		await this.addToFavoritesButton.waitFor({
-			state: "visible",
-			timeout: 25000
-		})
 		await this.addToFavoritesButton.click()
 	}
 
 	/**
-	 * Complete add to favorites flow
+	 * Complete add to favorites flow.
 	 */
 	async addProductToFavorites() {
 		await this.clickAddToFavorites()
@@ -155,11 +124,12 @@ export class ProductDetailPage {
 	// ==================== BRAND METHODS ====================
 
 	/**
-	 * Get brand badge text content
-	 * @returns {string} Brand name
+	 * Get brand badge text content.
+	 * @returns {Promise<string>}
 	 */
 	async getBrandBadgeText() {
-		await this.brandBadge.waitFor({ state: "visible", timeout: 10000 })
-		return await this.brandBadge.textContent()
+		const brandLocator = this.page.locator('[aria-label="brand"]')
+		await brandLocator.waitFor({ state: "visible", timeout: 10000 })
+		return await brandLocator.textContent()
 	}
 }
