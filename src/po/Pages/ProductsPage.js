@@ -8,6 +8,7 @@ import {
 	PaginationComponent
 } from "../Components/index.js"
 import { URLS } from "../../configs/utils/constants.js"
+import { waitForProductsVisible } from "../../configs/utils/helpers.js"
 
 export class ProductsPage extends BasePage {
 	constructor(page) {
@@ -27,7 +28,7 @@ export class ProductsPage extends BasePage {
 	// ==================== NAVIGATION ====================
 
 	async navigateToProductsPage() {
-		await this.navigateTo(URLS.BASE)
+		await this.goto(URLS.BASE)
 		await this.waitForInitialProductsLoad()
 	}
 
@@ -131,9 +132,58 @@ export class ProductsPage extends BasePage {
 
 	// ==================== WAIT METHODS ====================
 
+	/**
+	 * Wait for the first element matching the locator to be visible.
+	 * @param {import('@playwright/test').Locator} locator
+	 * @param {number} timeout
+	 */
+	async waitForElementVisible(locator, timeout = 10000) {
+		await locator.first().waitFor({ state: "visible", timeout })
+	}
+
+	/**
+	 * Wait for products to become visible with optional container.
+	 * @param {import('@playwright/test').Locator} productLocator
+	 * @param {import('@playwright/test').Locator|null} containerLocator
+	 * @param {number} timeout
+	 */
+	async waitForProductsVisible(productLocator, containerLocator = null, timeout = 15000) {
+		await waitForProductsVisible(this.page, productLocator, containerLocator, timeout)
+	}
+
 	/** @param {number} timeout */
 	async waitForInitialProductsLoad(timeout = 15000) {
 		await this.waitForProductsVisible(this.productName, null, timeout)
+	}
+
+	/**
+	 * Check if element is visible without throwing.
+	 * @param {import('@playwright/test').Locator} locator
+	 * @param {number} timeout
+	 * @returns {Promise<boolean>}
+	 */
+	async isElementVisible(locator, timeout = 3000) {
+		try {
+			await locator.waitFor({ state: "visible", timeout })
+			return true
+		} catch {
+			return false
+		}
+	}
+
+	/**
+	 * Get element count, waiting for at least one to be visible first.
+	 * @param {import('@playwright/test').Locator} locator
+	 * @param {number} timeout
+	 * @returns {Promise<number>}
+	 */
+	async getElementCount(locator, timeout = 10000) {
+		try {
+			await this.waitForElementVisible(locator, timeout)
+		} catch {
+			return 0
+		}
+		return await locator.count()
 	}
 
 	// ==================== VALIDATION ====================

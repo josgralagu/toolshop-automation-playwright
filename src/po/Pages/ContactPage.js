@@ -43,7 +43,7 @@ export class ContactPage extends BasePage {
 	 * Navigate to contact page and wait for load completion
 	 */
 	async navigate() {
-		await this.page.goto(`${URLS.BASE}${URLS.CONTACT}`)
+		await this.goto(`${URLS.BASE}${URLS.CONTACT}`)
 		await this.page.waitForLoadState("domcontentloaded")
 		await this.firstNameInput.waitFor({ state: "visible", timeout: 15000 })
 	}

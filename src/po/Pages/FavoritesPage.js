@@ -1,9 +1,11 @@
+import { BasePage } from "./BasePage.js"
+
 /**
  * Favorites Page Object
  */
-export class FavoritesPage {
+export class FavoritesPage extends BasePage {
 	constructor(page) {
-		this.page = page
+		super(page)
 
 		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
 		this.productName = page.getByTestId("product-name")

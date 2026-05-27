@@ -1,6 +1,8 @@
-export class MyAccountPage {
+import { BasePage } from "./BasePage.js"
+
+export class MyAccountPage extends BasePage {
 	constructor(page) {
-		this.page = page
+		super(page)
 
 		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
 		this.userName = page.getByTestId("nav-menu")
@@ -39,7 +41,7 @@ export class MyAccountPage {
 	async goToMyFavorites() {
 		await this.openUserMenu()
 		await this.myFavoritesLink.click()
-		await this.page.waitForURL("**/account/favorites", { timeout: 15000 })
+		await this.waitForUrl("**/account/favorites", { timeout: 15000 })
 	}
 
 	/**
@@ -49,6 +51,6 @@ export class MyAccountPage {
 	async accessToProfile() {
 		await this.openUserMenu()
 		await this.myProfileLink.click()
-		await this.page.waitForURL("**/account/profile", { timeout: 15000 })
+		await this.waitForUrl("**/account/profile", { timeout: 15000 })
 	}
 }

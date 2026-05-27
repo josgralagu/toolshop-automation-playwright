@@ -1,3 +1,4 @@
+import { BasePage } from "./BasePage.js"
 import { URLS } from "../../configs/utils/constants.js"
 
 /**
@@ -5,9 +6,9 @@ import { URLS } from "../../configs/utils/constants.js"
  * Handles user authentication and login functionality
  * Provides methods to fill login form and complete authentication process
  */
-export class SignInPage {
+export class SignInPage extends BasePage {
 	constructor(page) {
-		this.page = page
+		super(page)
 
 		// ==================== LOGIN FORM ELEMENTS ====================
 		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js
@@ -23,7 +24,7 @@ export class SignInPage {
 	 * Navigate to sign in page
 	 */
 	async navigateToSignIn() {
-		await this.page.goto(`${URLS.BASE}${URLS.SIGN_IN}`)
+		await this.goto(`${URLS.BASE}${URLS.SIGN_IN}`)
 	}
 
 	// ==================== FORM INTERACTION METHODS ====================
@@ -62,6 +63,6 @@ export class SignInPage {
 		await this.fillEmail(email)
 		await this.fillPassword(password)
 		await this.clickLogInButton()
-		await this.page.waitForURL("**/account", { timeout: 15000 })
+		await this.waitForUrl("**/account", { timeout: 15000 })
 	}
 }

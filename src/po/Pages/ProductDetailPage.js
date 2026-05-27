@@ -1,10 +1,12 @@
+import { BasePage } from "./BasePage.js"
+
 /**
  * Product Detail Page Object
  * Handles interactions and data retrieval from the product detail page
  */
-export class ProductDetailPage {
+export class ProductDetailPage extends BasePage {
 	constructor(page) {
-		this.page = page
+		super(page)
 
 		// ==================== PRODUCT INFORMATION ELEMENTS ====================
 		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js

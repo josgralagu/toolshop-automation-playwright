@@ -1,11 +1,13 @@
+import { BasePage } from "./BasePage.js"
+
 /**
  * Cart Page Object
  * Handles interactions and data retrieval from the shopping cart page
  * Provides methods to access product information, quantities, prices, and totals
  */
-export class CartPage {
+export class CartPage extends BasePage {
 	constructor(page) {
-		this.page = page
+		super(page)
 
 		// ==================== PRODUCT INFORMATION ELEMENTS ====================
 		// getByTestId() requiere testIdAttribute: 'data-test' en playwright.config.js

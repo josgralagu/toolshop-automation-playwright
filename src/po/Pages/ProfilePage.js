@@ -1,12 +1,13 @@
+import { BasePage } from "./BasePage.js"
+import { expect } from "@playwright/test"
+
 /**
  * Profile Page Object
  * Handles interactions and data management on the user profile page
  */
-import { expect } from "@playwright/test"
-
-export class ProfilePage {
+export class ProfilePage extends BasePage {
 	constructor(page) {
-		this.page = page
+		super(page)
 
 		this.firstNameField = page.getByTestId("first-name")
 		this.lastNameField = page.getByTestId("last-name")

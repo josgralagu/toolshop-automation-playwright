@@ -1,3 +1,4 @@
+import { BasePage } from "./BasePage.js"
 import { URLS } from "../../configs/utils/constants.js"
 
 /**
@@ -5,9 +6,9 @@ import { URLS } from "../../configs/utils/constants.js"
  * Handles user registration and account creation
  * Provides methods to fill registration form and complete user creation process
  */
-export class SignUpPage {
+export class SignUpPage extends BasePage {
 	constructor(page) {
-		this.page = page
+		super(page)
 
 		this.timeout = process.env.CI ? 180000 : 30000
 
@@ -37,7 +38,7 @@ export class SignUpPage {
 	 * Navigate to sign up page
 	 */
 	async navigateToSignUp() {
-		await this.page.goto(`${URLS.BASE}${URLS.SIGN_UP}`)
+		await this.goto(`${URLS.BASE}${URLS.SIGN_UP}`)
 	}
 
 	// ==================== REGISTRATION METHODS ====================
@@ -68,7 +69,7 @@ export class SignUpPage {
 		await this.countryDropdown.selectOption(userData.country)
 		await this.registerButton.click()
 
-		await this.page.waitForURL("**/auth/login", {
+		await this.waitForUrl("**/auth/login", {
 			waitUntil: "load",
 			timeout: 30000
 		})
