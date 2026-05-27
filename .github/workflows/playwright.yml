@@ -2,9 +2,9 @@ name: Playwright E2E Tests
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, update]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, update]
   workflow_dispatch:
 
 jobs:
