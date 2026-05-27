@@ -24,7 +24,8 @@ test.describe("Favorite Products", () => {
 		await favPage.waitForFavoritesLoad()
 		await favPage.deleteFirstFavorite()
 
-		// Verify favorites list is empty
+		// Verify favorites list is empty via web-first assertion
+		await expect(favPage.productName).toHaveCount(0, { timeout: 10000 })
 		expect(await favPage.isEmpty()).toBe(true)
 	})
 

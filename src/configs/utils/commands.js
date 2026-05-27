@@ -8,6 +8,7 @@
 import { expect } from "@playwright/test"
 import { pages } from "../../po/index.js"
 import { languageMap } from "./testData.js"
+import { URLS } from "./constants.js"
 
 // ==================== PROFILE ACTIONS SECTION ====================
 
@@ -113,7 +114,7 @@ export async function addProductsAndCollectData(page, productNames, qtyPerProduc
 export async function getCartData(page) {
 	const cartPage = pages("cart", page)
 
-	await page.goto("https://practicesoftwaretesting.com/checkout", {
+	await page.goto(`${URLS.BASE}${URLS.CART}`, {
 		waitUntil: "domcontentloaded"
 	})
 	await cartPage.waitForCartLoad()

@@ -1,5 +1,3 @@
-import { expect } from "@playwright/test"
-
 /**
  * Favorites Page Object
  */
@@ -24,23 +22,28 @@ export class FavoritesPage {
 	}
 
 	/**
-	 * Wait until all favorites are removed.
-	 * Uses toHaveCount(0) to avoid the bug where .first() detaches
-	 * but remaining items are still in the DOM.
+	 * Get the current count of favorited products.
+	 * count() has no auto-wait, so waitFor one element first.
+	 * @returns {Promise<number>}
 	 */
-	async waitUntilNoFavorites() {
-		await expect(this.productName).toHaveCount(0, { timeout: 10000 })
+	async getFavoritesCount() {
+		try {
+			await this.productName.first().waitFor({ state: "visible", timeout: 10000 })
+		} catch {
+			return 0
+		}
+		return await this.productName.count()
 	}
 
 	// ==================== FAVORITE MANAGEMENT METHODS ====================
 
 	/**
 	 * Delete the first favorite product.
-	 * deleteBtn.click() auto-waits for visibility — waitFor removed.
+	 * deleteBtn.click() auto-waits for visibility.
+	 * Assertions (toHaveCount) belong in the test, not here.
 	 */
 	async deleteFirstFavorite() {
 		await this.deleteBtn.click()
-		await this.waitUntilNoFavorites()
 	}
 
 	// ==================== STATUS CHECK METHODS ====================

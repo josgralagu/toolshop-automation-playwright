@@ -13,5 +13,6 @@ export const URLS = {
 	SIGN_IN: "/auth/login",
 	PROFILE: "/account/profile",
 	FAVORITES: "/account/favorites",
-	CART: "/checkout"
+	CART: "/checkout",
+	CONTACT: "/contact"
 }

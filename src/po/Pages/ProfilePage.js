@@ -1,9 +1,9 @@
-import { expect } from "@playwright/test"
-
 /**
  * Profile Page Object
  * Handles interactions and data management on the user profile page
  */
+import { expect } from "@playwright/test"
+
 export class ProfilePage {
 	constructor(page) {
 		this.page = page
@@ -48,16 +48,22 @@ export class ProfilePage {
 	/**
 	 * Wait for profile data to load completely.
 	 *
-	 * Este waitFor es necesario y legítimo: no hay acción de Playwright
-	 * posterior que dispare auto-wait. Esperamos que Angular popule el campo
-	 * con los datos del usuario antes de que el test los sobreescriba.
-	 * Sin esta espera, fill() limpiaría un campo vacío y la validación
-	 * posterior de generateValidUser().phone fallaría.
+	 * Espera a que el campo phone sea visible y Angular haya populado
+	 * los datos del usuario. Sin esta espera, fill() podría escribir
+	 * sobre un campo aún vacío.
 	 */
 	async waitForProfileDataLoaded() {
-		await this.phoneField.waitFor({ state: "visible", timeout: 10000 })
-		await expect(this.phoneField).not.toHaveValue("", { timeout: 10000 })
-	}
+	await this.phoneField.waitFor({
+		state: "visible",
+		timeout: 10000,
+	})
+
+	// Synchronization wait:
+	// wait until Angular hydrates profile data into the form
+	await expect(this.phoneField).not.toHaveValue("", {
+		timeout: 10000,
+	})
+}
 
 	// ==================== COMPOSITE METHODS ====================
 

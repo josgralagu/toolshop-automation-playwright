@@ -1,4 +1,5 @@
 import { BasePage } from "./BasePage.js"
+import { URLS } from "../../configs/utils/constants.js"
 
 export class ContactPage extends BasePage {
 	constructor(page) {
@@ -42,7 +43,7 @@ export class ContactPage extends BasePage {
 	 * Navigate to contact page and wait for load completion
 	 */
 	async navigate() {
-		await this.page.goto("https://practicesoftwaretesting.com/contact")
+		await this.page.goto(`${URLS.BASE}${URLS.CONTACT}`)
 		await this.page.waitForLoadState("domcontentloaded")
 		await this.firstNameInput.waitFor({ state: "visible", timeout: 15000 })
 	}
