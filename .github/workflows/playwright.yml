@@ -1,0 +1,87 @@
+name: Playwright E2E Tests
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install ${{ matrix.browser }} --with-deps
+
+      - name: Health check application
+        continue-on-error: true
+        run: |
+          echo "Checking if Practice Software Testing is reachable..."
+          for i in $(seq 1 10); do
+            if curl -f -s -o /dev/null https://practicesoftwaretesting.com; then
+              echo "Application is reachable"
+              exit 0
+            fi
+            echo "Waiting... ($i/10)"
+            sleep 5
+          done
+          echo "WARNING: Application health check failed, continuing anyway..."
+
+      - name: Run Playwright tests
+        run: npm run test:playwright -- --project=${{ matrix.browser }}
+        env:
+          CI: true
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}-${{ github.run_number }}
+          path: reports/ui/playwright-reports/
+          retention-days: 30
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results-${{ matrix.browser }}-${{ github.run_number }}
+          path: reports/ui/playwright-test-results/
+          retention-days: 30
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ matrix.browser }}-${{ github.run_number }}
+          path: reports/ui/playwright-test-results/**/trace.zip
+          retention-days: 14
+
+      - name: Print debug info on failure
+        if: failure()
+        run: |
+          echo "==================== DEBUG INFO ===================="
+          echo "Browser: ${{ matrix.browser }}"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Playwright version: $(npx playwright --version)"
+          echo "===================================================="
