@@ -85,5 +85,3 @@ jobs:
           echo "NPM version: $(npm --version)"
           echo "Playwright version: $(npx playwright --version)"
           echo "===================================================="
-
-echo "" >> .github/workflows/playwright.yml
