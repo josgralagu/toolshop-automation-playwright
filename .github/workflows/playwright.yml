@@ -84,4 +84,7 @@ jobs:
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
           echo "Playwright version: $(npx playwright --version)"
+          echo ""
+          echo "NOTE: If traces show 'performing security verification',"
+          echo "this is a Cloudflare challenge, not an app issue."
           echo "===================================================="

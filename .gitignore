@@ -5,6 +5,9 @@
 # Dependencies
 node_modules/
 
+# Playwright auth state (contains session cookies)
+playwright/.auth/
+
 # Reports (generated files)
 reports/
 

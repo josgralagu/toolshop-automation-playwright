@@ -66,6 +66,16 @@ export class ProfilePage extends BasePage {
 	})
 }
 
+	// ==================== UTILITY METHODS ====================
+
+	/**
+	 * Get current phone input value.
+	 * @returns {Promise<string>}
+	 */
+	async getPhoneValue() {
+		return await this.phoneField.inputValue()
+	}
+
 	// ==================== COMPOSITE METHODS ====================
 
 	/**

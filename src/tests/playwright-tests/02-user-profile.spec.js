@@ -1,56 +1,39 @@
-import {
-	test,
-	expect
-} from "../../configs/playwrightConfigs/fixtures/auth.fixture"
+import { test, expect } from "@playwright/test"
 import { pages } from "../../po/index.js"
-import { updateProfilePhoneNumber } from "../../configs/utils/commands.js"
 import {
 	validProfileUpdate,
-	invalidProfileUpdate,
-	generateValidUser
+	invalidProfileUpdate
 } from "../../configs/utils/testData"
 
 test.describe("User Profile", () => {
-	/**
-	 * Test successful profile information update
-	 * Validates that users can update their phone number with valid data
-	 */
-	test("Successful update of profile information", async ({
-		authenticatedPage
-	}) => {
-		// Navigate to profile and perform valid update
-		await updateProfilePhoneNumber(
-			authenticatedPage,
-			validProfileUpdate.phone
-		)
+	test("Successful update of profile information", async ({ page }) => {
+		await page.goto("https://practicesoftwaretesting.com/account", {
+			waitUntil: "domcontentloaded"
+		})
 
-		// Verify successful update
-		const profilePage = pages("profile", authenticatedPage)
+		const myAccountPage = pages("myaccount", page)
+		const profilePage = pages("profile", page)
+		await myAccountPage.accessToProfile()
+		await profilePage.updatePhoneNumber(validProfileUpdate.phone)
+
 		await expect(profilePage.successMessage).toBeVisible({ timeout: 10000 })
-		await expect(profilePage.phoneField).toHaveValue(
-			validProfileUpdate.phone
-		)
+		await expect(profilePage.phoneField).toHaveValue(validProfileUpdate.phone)
 	})
 
-	/**
-	 * Test unsuccessful profile information update
-	 * Validates error handling for invalid phone number data
-	 */
-	test("Unsuccessful update of profile information", async ({
-		authenticatedPage
-	}) => {
-		// Navigate to profile and attempt invalid update
-		await updateProfilePhoneNumber(
-			authenticatedPage,
-			invalidProfileUpdate.phone
-		)
+	test("Unsuccessful update of profile information", async ({ page }) => {
+		await page.goto("https://practicesoftwaretesting.com/account", {
+			waitUntil: "domcontentloaded"
+		})
 
-		// Verify error message and unchanged phone field
-		const profilePage = pages("profile", authenticatedPage)
+		const myAccountPage = pages("myaccount", page)
+		const profilePage = pages("profile", page)
+		await myAccountPage.accessToProfile()
+		await profilePage.waitForProfileDataLoaded()
+		const originalPhone = await profilePage.getPhoneValue()
+
+		await profilePage.updatePhoneNumber(invalidProfileUpdate.phone)
+
 		await expect(profilePage.errorMessage).toBeVisible({ timeout: 15000 })
-		await expect(profilePage.phoneField).toHaveValue(
-			generateValidUser().phone,
-			{ timeout: 1000 }
-		)
+		await expect(profilePage.phoneField).toHaveValue(originalPhone, { timeout: 5000 })
 	})
 })

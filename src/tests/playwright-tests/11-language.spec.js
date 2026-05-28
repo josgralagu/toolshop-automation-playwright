@@ -9,6 +9,8 @@ import {
 import { LANGUAGES } from "../../configs/utils/testData"
 
 test.describe("Feature: Language Change on Contact Page", () => {
+	test.use({ storageState: { cookies: [], origins: [] } })
+
 	test.beforeEach(async ({ page }) => {
 		const contactPage = pages("contact", page)
 		await contactPage.navigate()

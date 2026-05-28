@@ -15,11 +15,20 @@ export class BasePage {
 
 	/**
 	 * Navigate to URL with domcontentloaded strategy.
+	 * Detects Cloudflare challenge pages and throws with a clear message
+	 * instead of letting locators timeout with opaque errors.
 	 * @param {string} path
 	 * @param {number} timeout
 	 */
 	async goto(path, timeout = 45000) {
 		await this.page.goto(path, { timeout, waitUntil: "domcontentloaded" })
+		const title = await this.page.title()
+		if (/(security|challenge|cloudflare|just a moment)/i.test(title)) {
+			throw new Error(
+				`Bot protection page detected at ${path}. Title: "${title}". ` +
+				"This is a Cloudflare challenge blocking the test runner."
+			)
+		}
 	}
 
 	/**

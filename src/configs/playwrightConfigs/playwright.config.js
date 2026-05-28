@@ -23,13 +23,13 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: isCI,
-  /* Number of retries for all tests */
-  retries: 1,
-  /* Number of workers for parallel execution */
-  workers: 2,
+  /* Retries: more in CI for network/challenge resilience */
+  retries: isCI ? 2 : 1,
+  /* Workers: 1 in CI to reduce traffic profile, 2 locally */
+  workers: isCI ? 1 : 2,
 
-  /* Timeout per test. */
-  timeout: 80000,
+  /* Timeout per test: more headroom in CI */
+  timeout: isCI ? 120000 : 80000,
 
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
@@ -63,13 +63,19 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      name: "setup",
+      testMatch: /.*\.setup\.js/
+    },
+    {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
         headless: isCI,
         actionTimeout: 15000,
         viewport: { width: 1920, height: 1080 },
+        storageState: "playwright/.auth/user.json",
       },
+      dependencies: ["setup"],
     },
     {
       name: "firefox",
@@ -78,7 +84,9 @@ export default defineConfig({
         headless: true,
         actionTimeout: 15000,
         viewport: { width: 1920, height: 1080 },
+        storageState: "playwright/.auth/user.json",
       },
+      dependencies: ["setup"],
     },
     {
       name: "msedge",
@@ -88,7 +96,9 @@ export default defineConfig({
         headless: isCI,
         actionTimeout: 15000,
         viewport: { width: 1920, height: 1080 },
+        storageState: "playwright/.auth/user.json",
       },
+      dependencies: ["setup"],
     },
     /*{
       name: "webkit",

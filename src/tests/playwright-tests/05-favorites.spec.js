@@ -1,46 +1,34 @@
-import {
-	test,
-	expect
-} from "../../configs/playwrightConfigs/fixtures/auth.fixture"
+import { test, expect } from "@playwright/test"
 import { pages } from "../../po/index.js"
 import { goToProductDetail } from "../../configs/utils/commands"
 import { searchProducts } from "../../configs/utils/testData"
 
 test.describe("Favorite Products", () => {
-	/**
-	 * Test removing a product from favorites list
-	 * Validates complete favorites management workflow
-	 */
-	test("Remove a product from favorites", async ({ authenticatedPage }) => {
-		// Add product to favorites
-		await goToProductDetail(authenticatedPage, searchProducts[0])
-		const detailPage = pages("productdetail", authenticatedPage)
+	test("Remove a product from favorites", async ({ page }) => {
+		await goToProductDetail(page, searchProducts[0])
+		const detailPage = pages("productdetail", page)
 		await detailPage.addProductToFavorites()
 
-		// Navigate to favorites and remove product
-		const myAccount = pages("myaccount", authenticatedPage)
-		const favPage = pages("favorites", authenticatedPage)
+		const myAccount = pages("myaccount", page)
+		const favPage = pages("favorites", page)
 		await myAccount.goToMyFavorites()
 		await favPage.waitForFavoritesLoad()
 		await favPage.deleteFirstFavorite()
 
-		// Verify favorites list is empty via web-first assertion
 		await expect(favPage.productName).toHaveCount(0, { timeout: 10000 })
 		expect(await favPage.isEmpty()).toBe(true)
 	})
 
-	/**
-	 * Test adding to favorites without authentication
-	 * Validates authentication requirement for favorites functionality
-	 */
-	test("Add to favorites without auth", async ({ page }) => {
-		// Attempt to add to favorites without login
-		await goToProductDetail(page, searchProducts[0])
-		const detailPage = pages("productdetail", page)
-		await detailPage.clickAddToFavorites()
+	test.describe("Unauthenticated", () => {
+		test.use({ storageState: { cookies: [], origins: [] } })
 
-		// Verify error message and page remains on product detail
-		await expect(detailPage.favErrorMessage).toBeVisible()
-		await expect(page).toHaveURL(/\/product\//)
+		test("Add to favorites without auth", async ({ page }) => {
+			await goToProductDetail(page, searchProducts[0])
+			const detailPage = pages("productdetail", page)
+			await detailPage.clickAddToFavorites()
+
+			await expect(detailPage.favErrorMessage).toBeVisible()
+			await expect(page).toHaveURL(/\/product\//)
+		})
 	})
 })
